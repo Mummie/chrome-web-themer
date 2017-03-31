@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en" ng-app="themerApp" ng-csp>
+
+<head>
+    <meta charset="utf-8">
+    <!-- build:css styles/popup-vendor.css -->
+    <!-- bower:css -->
+    <!-- endbower -->
+    <!-- endbuild -->
+    <!-- build:css styles/main.css -->
+    <link href="styles/main.css" rel="stylesheet">
+    <link href="bower_components/angular/angular-csp.css" rel="stylesheet">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- endbuild -->
+
+    <!-- build:js scripts/popup-vendor.js -->
+    <!-- bower:js -->
+    <!-- endbower -->
+    <!-- endbuild -->
+
+    <!-- build:js scripts/popup.js -->
+    <script src="scripts/popup.js"></script>
+    <script src="scripts/background.js"></script>
+    <!-- endbuild -->
+    <script src="bower_components/angular/angular.js"></script>
+    <script src="scripts/app.js"></script>
+</head>
+
+<body>
+    <div id="container">
+        <input id="tab-1" type="radio" name="tab-group" checked="checked" />
+        <label for="tab-1">Edits</label>
+        <input id="tab-2" type="radio" name="tab-group" />
+        <label for="tab-2">Tab 2</label>
+
+        <div id="content">
+            <div class="main" ng-controller="EditController" id="content-1">
+                <div class="panel panel-default normal">
+                    <div class="panel-heading">
+                        <h1 class="panel-title">Edits</h1>
+                        <button ng-click="editElement()" id="edit-button" class="btn btn-primary btn-md raised">+ Edit</button>
+                        <p>{{output}}</p>
+                        <p>{{errMessage}}</p>
+                    </div>
+                    <div class="panel-body">
+                        <ul class="list-group todoList">
+                            <li class="list-group-item list-group-item-success">Dapibus ac facilisis in</li>
+                            <li class="list-group-item list-group-item-info">Cras sit amet nibh libero</li>
+                            <li class="list-group-item list-group-item-warning">Porta ac consectetur ac</li>
+                            <li class="list-group-item list-group-item-danger">Vestibulum at eros</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="panel panel-default normal">
+                    <div class="col-md-6">
+                        <a href="#" ng-click="toggleTextReplace = !toggleTextReplace" class="show-filter">Replace Text</a>
+                        <div class="col-md-12" ng-show="toggleTextReplace">
+                            <div class="panel-body">
+
+                                <label class="normal" for="find-text">Find: </label>
+                                <input type="text" class="txt-replace-input" id="find-text" ng-model="txtFind" ng-change="textReplace()" />
+                                <p>{{txtFind}}</p>
+                                <label class="normal" for="replace-text">Replace: </label>
+                                <input type="text" class="txt-replace-input" id="replace-text" ng-model="txtReplace" ng-change="textReplace()" />
+                                <p>{{txtReplace}}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="#" ng-click="toggleFilters = !toggleFilters" class="show-filter">Apply Filters</a>
+                        <div class="col-md-12" ng-show="toggleFilters">
+                            <div class="panel-body">
+
+                                <select>
+                                    <option>Protanopia</option>
+                                    <option>Dyslexic Reader</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="content-2">
+                    <p class="column-left"><img src="http://ximg.es/200x150" alt="">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Illum, est, nisi enim voluptates dicta quibusdam recusandae eveniet provident non at nostrum nesciunt laudantium omnis aliquam debitis
+                        magni expedita cumque tempore.</p>
+                    <p class="column-right"><img src="http://ximg.es/200x150" alt="">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sed, molestiae, officia repellendus quasi cumque dolor eius deserunt possimus aliquid neque nam assumenda veniam soluta enim commodi
+                        aperiam reprehenderit quia incidunt.</p>
+                </div>
+
+            </div>
+</body>
+
+</html>

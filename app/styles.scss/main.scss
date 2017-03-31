@@ -1,0 +1,385 @@
+//colors
+$color_wild_sand_approx: #f5f5f5;
+$color_emperor_approx: #4d4d4d;
+$white: #fff;
+$black_20: rgba(0, 0, 0, 0.2);
+$black_10: rgba(0, 0, 0, 0.1);
+$color_mercury_approx: #e6e6e6;
+$color_well_read_15_approx: rgba(175, 47, 47, 0.15);
+//fonts
+$font_0: Helvetica Neue;
+$font_1: Helvetica;
+$font_2: Arial;
+$font_3: sans-serif;
+html {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font: 14px $font_0, $font_1, $font_2, $font_3;
+    line-height: 1.4em;
+    background: $color_wild_sand_approx;
+    color: $color_emperor_approx;
+    min-width: 230px;
+    max-width: 550px;
+    margin: 0 auto;
+    font-weight: 300;
+}
+
+//colors
+$color_alabaster_approx: #f9f9f9;
+$color_suva_gray_approx: #888;
+$color_alto_approx: #ddd;
+$color_storm_dust_approx: #666;
+$seashell: #f1f1f1;
+$color_tundora_approx: #444;
+//fonts
+$font_0: Arial;
+$font_1: sans;
+* {
+    font-family: $font_0, $font_1;
+    margin: 0;
+    padding: 0;
+    //Instead of the line below you could use @include box-sizing($bs)
+    box-sizing: border-box;
+}
+
+h1 {
+    margin: 1em 0;
+    text-align: center;
+}
+
+#container {
+    margin: 0 auto;
+    width: 50%;
+    input {
+        height: 2.5em;
+        visibility: hidden;
+        &:hover+label {
+            background: $color_alto_approx;
+            color: $color_storm_dust_approx;
+        }
+        &:checked+label {
+            background: $seashell;
+            color: $color_tundora_approx;
+            position: relative;
+            z-index: 6;
+        }
+        &#tab-1:checked~#content #content-1 {
+            opacity: 1;
+            z-index: 100;
+        }
+        &#tab-2:checked~#content #content-2 {
+            opacity: 1;
+            z-index: 100;
+        }
+        &#tab-3:checked~#content #content-3 {
+            opacity: 1;
+            z-index: 100;
+        }
+    }
+    label {
+        background: $color_alabaster_approx;
+        //Instead of the line below you could use @include border-radius($radius, $vertical-radius)
+        border-radius: .25em .25em 0 0;
+        color: $color_suva_gray_approx;
+        cursor: pointer;
+        display: block;
+        float: left;
+        font-size: 1em;
+        height: 2.5em;
+        line-height: 2.5em;
+        margin-right: .25em;
+        padding: 0 1.5em;
+        text-align: center;
+    }
+}
+
+#content-3 {
+    p {
+        margin-bottom: 1em;
+    }
+    ul {
+        margin-bottom: 1em;
+        margin-left: 2em;
+    }
+}
+
+#content-1 p {
+    clear: both;
+    margin-bottom: 1em;
+    &.last {
+        margin-bottom: 0;
+    }
+    &.left img {
+        float: left;
+        margin-right: 1em;
+    }
+}
+
+#content-2 p {
+    float: left;
+    width: 48.5%;
+    &.column-right {
+        margin-left: 3%;
+    }
+    img {
+        display: block;
+        margin: 0 auto 1em auto;
+    }
+}
+
+input.visible {
+    visibility: visible !important;
+}
+
+input[type="checkbox"] {
+    outline: none;
+}
+
+.normal {
+    background: $white;
+    position: relative;
+    //Instead of the line below you could use @include box-shadow($shadow-1, $shadow-2, $shadow-3, $shadow-4, $shadow-5, $shadow-6, $shadow-7, $shadow-8, $shadow-9, $shadow-10)
+    box-shadow: 0 2px 4px 0 $black_20, 0 25px 50px 0 $black_10;
+    input::-webkit-input-placeholder {
+        font-style: italic;
+        font-weight: 300;
+        color: $color_mercury_approx;
+    }
+    input::-moz-placeholder {
+        font-style: italic;
+        font-weight: 300;
+        color: $color_mercury_approx;
+    }
+    input::input-placeholder {
+        font-style: italic;
+        font-weight: 300;
+        color: $color_mercury_approx;
+    }
+    h1 {
+        top: -155px;
+        width: 100%;
+        font-size: 39px;
+        font-weight: 100;
+        text-align: center;
+        color: $color_well_read_15_approx;
+        text-rendering: optimizeLegibility;
+    }
+}
+
+.show-filter,
+.show-filter:hover,
+.show-filter:active,
+.show-filter:visited {
+    text-decoration: none;
+}
+
+.show-filter {
+    transition: all 0.6s ease;
+    transform: scaleX(2.5) translateY(4px);
+}
+
+.show-filter:hover {
+    display: inline;
+    transform: scaleX(2.5);
+    text-shadow: 0 2px 2px rgba(255, 255, 255, 0.7), 0 10px 4px rgba(0, 0, 0, 0.5);
+    font-size: 20px;
+}
+
+
+/***********************
+  RAISED BUTTONS
+************************/
+
+.btn-primary.raised {
+    box-shadow: 0 3px 0 0 #007299;
+}
+
+.btn-primary.raised:active,
+.btn-primary.raised.active {
+    background: #33a6cc;
+    box-shadow: none;
+    margin-bottom: -3px;
+    margin-top: 3px;
+}
+
+
+/***********************
+  CUSTON BTN VALUES
+************************/
+
+.btn {
+    padding: 14px 24px;
+    border: 0 none;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.btn:focus,
+.btn:active:focus,
+.btn.active:focus {
+    outline: 0 none;
+}
+
+.btn-primary {
+    background: #0099cc;
+    color: #ffffff;
+}
+
+.text-replace {
+    margin-bottom: 5%;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary.active,
+.open>.dropdown-toggle.btn-primary {
+    background: #33a6cc;
+}
+
+.btn-primary:active,
+.btn-primary.active {
+    background: #007299;
+    box-shadow: none;
+}
+
+
+/***********************
+  ANIMATE FROM ANIMATE.CSS
+************************/
+
+.ng-hide-add {
+    animation: 0.5s lightSpeedOut ease;
+}
+
+.ng-hide-remove {
+    animation: 0.5s flipInX ease;
+}
+
+@keyframes flipInX {
+    0% {
+        //Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+        transform: perspective(400px) rotate3d(1, 0, 0, 90deg);
+        //Instead of the line below you could use @include transition-timing-function($function-1, $function-2, $function-3, $function-4, $function-5, $function-6, $function-7, $function-8, $function-9, $function-10)
+        transition-timing-function: ease-in;
+        opacity: 0;
+    }
+    40% {
+        //Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+        transform: perspective(400px) rotate3d(1, 0, 0, -20deg);
+        //Instead of the line below you could use @include transition-timing-function($function-1, $function-2, $function-3, $function-4, $function-5, $function-6, $function-7, $function-8, $function-9, $function-10)
+        transition-timing-function: ease-in;
+    }
+    60% {
+        //Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+        transform: perspective(400px) rotate3d(1, 0, 0, 10deg);
+        opacity: 1;
+    }
+    80% {
+        //Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+        transform: perspective(400px) rotate3d(1, 0, 0, -5deg);
+    }
+    100% {
+        //Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+        transform: perspective(400px);
+    }
+}
+
+@keyframes lightSpeedOut {
+    0% {
+        opacity: 1;
+        opacity: 1;
+    }
+    100% {
+        //Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+        transform: translate3d(100%, 0, 0) skewX(30deg);
+        opacity: 0;
+        //Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+        transform: translate3d(100%, 0, 0) skewX(30deg);
+        opacity: 0;
+    }
+}
+
+
+/* :a.href: is the tag name of my tag that holds the shadow DOM */
+
+\:a\.href\: {
+    all: initial !important;
+    position: absolute !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    display: inline-block !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    transform: none !important;
+    clear: none !important;
+    float: none !important;
+    opacity: 0.9 !important;
+    z-index: 2147483645 !important;
+    transition: z-index 1ms !important;
+    /* allow some stylistic properties to inherit */
+    font-size: inherit !important;
+    font-weight: inherit !important;
+}
+
+:hover>\:a\.href\: {
+    opacity: 1 !important;
+    z-index: 2147483646 !important;
+    transition: z-index 2ms !important;
+}
+
+\:a\.href\::hover {
+    opacity: 1 !important;
+    z-index: 2147483647 !important;
+    transition: z-index 3ms !important;
+}
+
+[a-href\:hover] {
+    outline: 1px dashed rgba(229, 151, 0, 0.9) !important;
+}
+
+\:a\.href\: .display-anchors-style-reset {
+    all: unset !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+}
+
+
+/**
+ * Styles designed for Firefox, because they do not support shadow DOM yet,
+ * and neither the "revert" CSS keyword, so we need to clone the default UA
+ * styles.
+ *
+ * Sources:
+ * https://dxr.mozilla.org/mozilla-central/rev/1d025ac534a6333a8170a59a95a8a3673d4028ee/layout/style/nsLayoutStylesheetCache.cpp#899
+ * https://dxr.mozilla.org/mozilla-central/rev/1d025ac534a6333a8170a59a95a8a3673d4028ee/layout/base/nsPresContext.cpp#227
+ */
+
+
+/* colors based on layout/base/nsPresContext.cpp */
+
+\:a\.href\: a.display-anchors-style-reset:link {
+    color: #00E !important;
+    text-decoration: underline !important;
+    cursor: pointer !important;
+}
+
+\:a\.href\: a.display-anchors-style-reset:visited {
+    color: #551a88 !important;
+}
+
+\:a\.href\: a.display-anchors-style-reset:active {
+    color: #E00 !important;
+}

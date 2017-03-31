@@ -1,0 +1,10 @@
+{
+  "name": "chrome-web-themer",
+  "private": true,
+  "version": "0.0.0",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.2.0",
+    "angular": "^1.6.2"
+  }
+}
