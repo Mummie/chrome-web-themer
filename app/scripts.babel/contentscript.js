@@ -1,8 +1,6 @@
 // All code that has to step outside of chrome app dom and go to current page dom
 /* eslint-disable no-unused-vars */
 console.log('hello from content script!');
-const pageEventListeners = getEventListeners(document);
-console.log(pageEventListeners);
 
 const cssPath = chrome.extension.getURL('styles/inject.css');
 const injectCSS = document.createElement('link');
