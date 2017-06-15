@@ -2,73 +2,148 @@
 <html lang="en" ng-app="themerApp" ng-csp>
 
 <head>
-    <meta charset="utf-8">
-    <!-- build:css styles/popup-vendor.css -->
-    <!-- bower:css -->
-    <!-- endbower -->
-    <!-- endbuild -->
-    <!-- build:css styles/main.css -->
-    <link href="styles/main.css" rel="stylesheet">
-    <link href="bower_components/angular/angular-csp.css" rel="stylesheet">
+	<meta charset="utf-8">
 
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-    <!-- endbuild -->
+	<!-- build:css styles/popup-vendor.css -->
+	<!-- bower:css -->
+	<!-- endbower -->
+	<!-- endbuild -->
+	<!-- build:css styles/main.css -->
+	<link href=https://cdn.jsdelivr.net/picnicss/6.3.2/picnic.min.css>
+	<link href="styles/main.css" rel="stylesheet">
+	<link href="bower_components/angular/angular-csp.css" rel="stylesheet">
+	<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"> -->
+	 <!-- endbuild -->
 
-    <!-- build:js scripts/popup-vendor.js -->
-    <!-- bower:js -->
-    <!-- endbower -->
-    <!-- endbuild -->
+	<!-- build:js scripts/popup-vendor.js -->
+	<!-- bower:js -->
+	<!-- endbower -->
+	<!-- endbuild -->
 
-    <!-- build:js scripts/popup.js -->
-    <script src="scripts/popup.js"></script>
-    <script src="scripts/background.js"></script>
-    <!-- endbuild -->
-    <script src="bower_components/angular/angular.js"></script>
-    <script src="scripts/app.js"></script>
+	<!-- build:js scripts/popup.js -->
+	<script src="scripts/popup.js"></script>
+	<script src="scripts/background.js"></script>
+	<!-- endbuild -->
+	<script src="bower_components/angular/angular.js"></script>
+	<script src="scripts/app.js"></script>
+	<link rel="stylesheet" href="picnic.css">
+
 </head>
 
 <body>
-    <div class="container-fluid">
-        <div class="content">
-            <div class="main" ng-controller="EditController" id="content-1">
-                <div class="panel panel-default normal">
-                    <div class="panel-heading">
-                        <h1 class="panel-title">Edits</h1>
-                        <button ng-click="editElement()" id="edit-button" class="btn btn-primary btn-md raised">+ Edit</button>
-                        <p>{{output}}</p>
-                        <p>{{errMessage}}</p>
-                    </div>
-                </div>
-                <div class="panel panel-default normal">
-                    <div class="row">
-                        <a href="#" ng-click="toggleTextReplace = !toggleTextReplace" class="show-filter">Replace Text</a>
-                        <div class="col-sm" ng-show="toggleTextReplace">
-                            <div class="panel-body">
+	<div class="row">
+		<div class="tabs two" style="text-align: center;">
 
-                                <label class="normal" for="find-text">Find: </label>
-                                <input type="text" class="txt-replace-input" id="find-text" ng-model="txtFind" ng-change="textReplace()" />
-                                <p>{{txtFind}}</p>
-                                <label class="normal" for="replace-text">Replace: </label>
-                                <input type="text" class="txt-replace-input" id="replace-text" ng-model="txtReplace" ng-change="textReplace()" />
-                                <p>{{txtReplace}}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <a href="#" ng-click="toggleFilters = !toggleFilters" class="show-filter">Apply Filters</a>
-                        <div class="col-sm" ng-show="toggleFilters">
-                            <div class="panel-body">
+			<input id='tabC-1' type='radio' name='tabgroupC' checked />
+			<label class="pseudo button" for="tabC-1">Edits</label>
 
-                                <select>
-                                    <option>Protanopia</option>
-                                    <option>Dyslexic Reader</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+			<input id='tabC-2' type='radio' name='tabgroupC'>
+			<label class="pseudo button" for="tabC-2">Filters</label>
+
+			<div class="row" style="text-align: left">
+				<!--start tabs-->
+				<div>
+					<!-- start tab1-->
+					<div class="card" style="margin: 10px 20px;">
+						<div style="color: red">
+							<!--all edits in here-->
+							<div style = "text-align: center">
+							<div class="main" ng-controller="EditController" id="content-1">
+								<h1 class="panel-title">Edits</h1>
+								<button ng-click="editElement()" id="edit-button" class="">+ Edit</button>
+								<p>{{output}}</p>
+								<p>{{errMessage}}</p>
+
+
+							</div>
+							<div class="main" ng-controller="EditController" id="content-1">
+								<button ng-click="editElement()" id="edit-button" class="">Remove</button>
+								<p>{{output}}</p>
+								<p>{{errMessage}}</p>
+
+
+							</div>
+						</div>
+
+								<!--panelbody-->
+								<ul class="list-group todoList">
+									<li class="list-group-item list-group-item-success">Edit 1</li>
+									<li class="list-group-item list-group-item-info">Edit 2</li>
+									<li class="list-group-item list-group-item-warning">Edit 3</li>
+									<li class="list-group-item list-group-item-danger">Edit 4</li>
+								</ul>
+
+
+						</div>
+
+					</div>
+				</div>
+				<!--End tab1-->
+
+				<div>
+					<!--Start tab2-->
+					<div class="card" style="margin: 10px 20px;">
+						<div class="">
+							<!--col-md-6-->
+							<a href="#" ng-click="toggleFilters = !toggleFilters" class="show-filter">Colorblind</a>
+							<div class="" ng-show="toggleFilters">
+								<!--col-md-12-->
+								<div class="">
+									<!--Panel-body-->
+
+									<select>
+										<option>Protanopia</option>
+										<option>Dyslexic Reader</option>
+									</select>
+								</div>
+							</div>
+						</div>
+
+
+							<!--panel panel-default normal-->
+							<div class="">
+								<!--col-md-6-->
+								<a href="#" ng-click="toggleTextReplace = !toggleTextReplace" class="show-filter">Replace Text</a>
+								<div class="" ng-show="toggleTextReplace">
+									<!--col-md-12-->
+									<div class="">
+										<!--Panel-body-->
+
+										<label class="normal" for="find-text">Find: </label>
+										<input type="text" class="txt-replace-input" id="find-text" ng-model="txtFind" ng-change="textReplace()" />
+										<p>{{txtFind}}</p>
+										<label class="normal" for="replace-text">Replace: </label>
+										<input type="text" class="txt-replace-input" id="replace-text" ng-model="txtReplace" ng-change="textReplace()" />
+										<p>{{txtReplace}}</p>
+									</div>
+								</div>
+							</div>
+
+					</div>
+				</div>
+
+			</div>
+
+		</div>
+
+
+			<!-- <p>before replace text</p> -->
+			<h5 style="text-align: center">Welcome To Chrome-Web-Themer </h5>
+			<!-- <div id="container">
+
+			 <h1>Edits</h1>
+			 <button ng-click="editElement()" id="edit-button">+ Edit</button>
+			 <p>{{output}}</p>
+			 <p>{{errMessage}}</p>
+		 </div>  -->
+
+
+
+
+
+
+		</div>
+		
 </body>
 
 </html>
