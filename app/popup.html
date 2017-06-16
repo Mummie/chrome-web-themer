@@ -1,149 +1,78 @@
-<!doctype html>
-<html lang="en" ng-app="themerApp" ng-csp>
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
-	<meta charset="utf-8">
+    <meta charset="utf-8">
+    <link href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" rel="stylesheet">
+    <link href="styles/main.css" rel="stylesheet">
+    <link href="bower_components/angular/angular-csp.css" rel="stylesheet">
+    <script src="bower_components/angular/angular.js">
+    </script>
+    <script src="bower_components/angular-sanitize/angular-sanitize.min.js">
+    </script>
 
-	<!-- build:css styles/popup-vendor.css -->
-	<!-- bower:css -->
-	<!-- endbower -->
-	<!-- endbuild -->
-	<!-- build:css styles/main.css -->
-	<link href=https://cdn.jsdelivr.net/picnicss/6.3.2/picnic.min.css>
-	<link href="styles/main.css" rel="stylesheet">
-	<link href="bower_components/angular/angular-csp.css" rel="stylesheet">
-	<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"> -->
-	 <!-- endbuild -->
-
-	<!-- build:js scripts/popup-vendor.js -->
-	<!-- bower:js -->
-	<!-- endbower -->
-	<!-- endbuild -->
-
-	<!-- build:js scripts/popup.js -->
-	<script src="scripts/popup.js"></script>
-	<script src="scripts/background.js"></script>
-	<!-- endbuild -->
-	<script src="bower_components/angular/angular.js"></script>
-	<script src="scripts/app.js"></script>
-	<link rel="stylesheet" href="picnic.css">
-
+    <script src="scripts/popup.js">
+    </script>
+    <script src="scripts/background.js">
+    </script>
+    <script src="scripts/app_factory.js"></script>
+    <script src="scripts/app.js">
+    </script>
 </head>
 
-<body>
-	<div class="row">
-		<div class="tabs two" style="text-align: center;">
-
-			<input id='tabC-1' type='radio' name='tabgroupC' checked />
-			<label class="pseudo button" for="tabC-1">Edits</label>
-
-			<input id='tabC-2' type='radio' name='tabgroupC'>
-			<label class="pseudo button" for="tabC-2">Filters</label>
-
-			<div class="row" style="text-align: left">
-				<!--start tabs-->
-				<div>
-					<!-- start tab1-->
-					<div class="card" style="margin: 10px 20px;">
-						<div style="color: red">
-							<!--all edits in here-->
-							<div style = "text-align: center">
-							<div class="main" ng-controller="EditController" id="content-1">
-								<h1 class="panel-title">Edits</h1>
-								<button ng-click="editElement()" id="edit-button" class="">+ Edit</button>
-								<p>{{output}}</p>
-								<p>{{errMessage}}</p>
-
-
-							</div>
-							<div class="main" ng-controller="EditController" id="content-1">
-								<button ng-click="editElement()" id="edit-button" class="">Remove</button>
-								<p>{{output}}</p>
-								<p>{{errMessage}}</p>
-
-
-							</div>
-						</div>
-
-								<!--panelbody-->
-								<ul class="list-group todoList">
-									<li class="list-group-item list-group-item-success">Edit 1</li>
-									<li class="list-group-item list-group-item-info">Edit 2</li>
-									<li class="list-group-item list-group-item-warning">Edit 3</li>
-									<li class="list-group-item list-group-item-danger">Edit 4</li>
-								</ul>
-
-
-						</div>
-
-					</div>
-				</div>
-				<!--End tab1-->
-
-				<div>
-					<!--Start tab2-->
-					<div class="card" style="margin: 10px 20px;">
-						<div class="">
-							<!--col-md-6-->
-							<a href="#" ng-click="toggleFilters = !toggleFilters" class="show-filter">Colorblind</a>
-							<div class="" ng-show="toggleFilters">
-								<!--col-md-12-->
-								<div class="">
-									<!--Panel-body-->
-
-									<select>
-										<option>Protanopia</option>
-										<option>Dyslexic Reader</option>
-									</select>
-								</div>
-							</div>
-						</div>
-
-
-							<!--panel panel-default normal-->
-							<div class="">
-								<!--col-md-6-->
-								<a href="#" ng-click="toggleTextReplace = !toggleTextReplace" class="show-filter">Replace Text</a>
-								<div class="" ng-show="toggleTextReplace">
-									<!--col-md-12-->
-									<div class="">
-										<!--Panel-body-->
-
-										<label class="normal" for="find-text">Find: </label>
-										<input type="text" class="txt-replace-input" id="find-text" ng-model="txtFind" ng-change="textReplace()" />
-										<p>{{txtFind}}</p>
-										<label class="normal" for="replace-text">Replace: </label>
-										<input type="text" class="txt-replace-input" id="replace-text" ng-model="txtReplace" ng-change="textReplace()" />
-										<p>{{txtReplace}}</p>
-									</div>
-								</div>
-							</div>
-
-					</div>
-				</div>
-
-			</div>
-
-		</div>
-
-
-			<!-- <p>before replace text</p> -->
-			<h5 style="text-align: center">Welcome To Chrome-Web-Themer </h5>
-			<!-- <div id="container">
-
-			 <h1>Edits</h1>
-			 <button ng-click="editElement()" id="edit-button">+ Edit</button>
-			 <p>{{output}}</p>
-			 <p>{{errMessage}}</p>
-		 </div>  -->
-
-
-
-
-
-
-		</div>
-		
+<body ng-app="themerApp">
+    <div class="main" ng-controller="EditController">
+        <div class="pure-menu pure-menu-horizontal">
+            <ul class="pure-menu-list">
+                <li class="pure-menu-item">
+                    <a class="pure-menu-link" ng-click="showTab = 'Edit'" href="#">Edits</a>
+                </li>
+                <li class="pure-menu-item">
+                    <a class="pure-menu-link" ng-click="showTab = 'Filters'" href="#">Filters</a>
+                </li>
+            </ul>
+        </div>
+        <div id="clouds">
+            <h1>Chrome Web Themer</h1>
+            <div class="cloud x1"></div>            
+            <!-- Time for multiple clouds to dance around -->
+            <div class="cloud x2"></div>
+            <div class="pure-g">
+                <div class="row" ng-show="showTab == 'Edit'" ng-cloak>
+                    <div class="card">
+                        <div class="main" id="content-1">
+                            <h1 class="panel-title">Edits</h1>
+                            <div edit-button-directive></div>
+                            <p ng-model="errMessage"></p>
+                        </div>
+                    </div>
+                    <a class="show-filter" ng-click="toggleTextReplace = !toggleTextReplace" href="#">Replace Text</a>
+                    <form class="pure-form pure-form-aligned" ng-show="toggleTextReplace" ng-cloak>
+                        <div class="pure-control-group">
+                            <label class="normal" for="find-text">Find:</label>
+                            <input class="txt-replace-input" id="find-text" type="text" ng-model="txtFind">
+                        </div>
+                        <div class="pure-control-group">
+                            <label class="normal" for="replace-text">Replace:</label>
+                            <input class="txt-replace-input" id="replace-text" type="text" ng-model="txtReplace">
+                        </div>
+                        <button type="submit" ng-click="textReplace()" class="pure-button pure-button-primary">Replace</button>
+                    </form>
+                </div>
+                <div class="row" ng-show="showTab == 'Filters'" ng-cloak>
+                    <div class="card">
+                        <a class="show-filter" href="#">Colorblind</a>
+                        <label class="pure-checkbox">
+                            <input type="checkbox" value=""> Protonopia
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="cloud x3"></div>
+            <div class="cloud x4"></div>
+            <div class="cloud x5"></div>
+        </div>
+    </div>
 </body>
 
 </html>

@@ -1,6 +1,32 @@
 //colors
 $color_wild_sand_approx: #f5f5f5;
 $color_emperor_approx: #4d4d4d;
+$color_1: #000;
+$color_2: inherit;
+$color_3: #111;
+$color_4: #0074d9;
+$color_5: #fff;
+$color_6: transparent;
+$color_7: #ff4136;
+$font_family_1: sans-serif;
+$font_family_2: monospace,
+monospace;
+$font_family_3: Arial,
+Helvetica,
+sans-serif;
+$font_family_4: sans;
+$background_color_1: #0074d9;
+$background_color_2: #2ecc40;
+$background_color_3: #ff851b;
+$background_color_4: #ff4136;
+$background_color_5: #aaa;
+$background_color_6: #ddd;
+$border_color_1: #0074d9;
+$border_color_2: transparent transparent #111;
+$border_color_3: #111 transparent transparent;
+$border_color_4: transparent #111 transparent transparent;
+$border_color_5: transparent transparent transparent #111;
+$border_top_color_1: #0074d9;
 $white: #fff;
 $black_20: rgba(0, 0, 0, 0.2);
 $black_10: rgba(0, 0, 0, 0.1);
@@ -11,21 +37,13 @@ $font_0: Helvetica Neue;
 $font_1: Helvetica;
 $font_2: Arial;
 $font_3: sans-serif;
-html {
-    margin: 0;
-    padding: 0;
-}
+
+*{ margin: 0; padding: 0;}
 
 body {
-    margin: 0;
-    padding: 0;
+    width: 300px;
     font: 14px $font_0, $font_1, $font_2, $font_3;
-    line-height: 1.4em;
-    background: $color_wild_sand_approx;
-    color: $color_emperor_approx;
-    min-width: 230px;
-    max-width: 550px;
-    margin: 0 auto;
+    overflow: hidden;
     font-weight: 300;
 }
 
@@ -39,18 +57,6 @@ $color_tundora_approx: #444;
 //fonts
 $font_0: Arial;
 $font_1: sans;
-* {
-    font-family: $font_0, $font_1;
-    margin: 0;
-    padding: 0;
-    //Instead of the line below you could use @include box-sizing($bs)
-    box-sizing: border-box;
-}
-
-h1 {
-    margin: 1em 0;
-    text-align: center;
-}
 
 #container {
     margin: 0 auto;
@@ -382,4 +388,162 @@ input[type="checkbox"] {
 
 \:a\.href\: a.display-anchors-style-reset:active {
     color: #E00 !important;
+}
+
+.pure-g {
+    letter-spacing: 0;
+    flex-wrap: wrap;
+}
+
+/*Lets start with the cloud formation rather*/
+
+/*The container will also serve as the SKY*/
+
+#clouds {
+  padding: 100px 0;
+  background: #c9dbe9;
+  background: -webkit-linear-gradient(top, #c9dbe9 0%, #fff 100%);
+  background: -linear-gradient(top, #c9dbe9 0%, #fff 100%);
+  background: -moz-linear-gradient(top, #c9dbe9 0%, #fff 100%);
+}
+
+/*Time to finalise the cloud shape*/
+
+.cloud {
+  width: 200px;
+  background: #fff;
+  border-radius: 200px;
+  -moz-border-radius: 200px;
+  -webkit-border-radius: 200px;
+  position: relative;
+  &:before {
+    content: '';
+    position: absolute;
+    background: #fff;
+    width: 100px;
+    height: 80px;
+    top: -15px;
+    left: 10px;
+    border-radius: 100px;
+    -moz-border-radius: 100px;
+    -webkit-border-radius: 100px;
+    -webkit-transform: rotate(30deg);
+    transform: rotate(30deg);
+    -moz-transform: rotate(30deg);
+  }
+  &:after {
+    content: '';
+    position: absolute;
+    background: #fff;
+    width: 100px;
+    height: 80px;
+    top: -15px;
+    left: 10px;
+    border-radius: 100px;
+    -moz-border-radius: 100px;
+    -webkit-border-radius: 100px;
+    -webkit-transform: rotate(30deg);
+    transform: rotate(30deg);
+    -moz-transform: rotate(30deg);
+    width: 120px;
+    height: 120px;
+    top: -55px;
+    left: auto;
+    right: 15px;
+  }
+}
+
+/*Time to animate*/
+
+.x1 {
+  -webkit-animation: moveclouds 15s linear infinite;
+  -moz-animation: moveclouds 15s linear infinite;
+  -o-animation: moveclouds 15s linear infinite;
+}
+
+/*variable speed, opacity, and position of clouds for realistic effect*/
+
+.x2 {
+  left: 200px;
+  -webkit-transform: scale(0.6);
+  -moz-transform: scale(0.6);
+  transform: scale(0.6);
+  opacity: 0.6;
+  /*opacity proportional to the size*/
+  /*Speed will also be proportional to the size and opacity*/
+  /*More the speed. Less the time in 's' = seconds*/
+  -webkit-animation: moveclouds 25s linear infinite;
+  -moz-animation: moveclouds 25s linear infinite;
+  -o-animation: moveclouds 25s linear infinite;
+}
+
+.x3 {
+  left: -250px;
+  top: -200px;
+  -webkit-transform: scale(0.8);
+  -moz-transform: scale(0.8);
+  transform: scale(0.8);
+  opacity: 0.8;
+  /*opacity proportional to the size*/
+  -webkit-animation: moveclouds 20s linear infinite;
+  -moz-animation: moveclouds 20s linear infinite;
+  -o-animation: moveclouds 20s linear infinite;
+}
+
+.x4 {
+  left: 300px;
+  top: -250px;
+  -webkit-transform: scale(0.75);
+  -moz-transform: scale(0.75);
+  transform: scale(0.75);
+  opacity: 0.75;
+  /*opacity proportional to the size*/
+  -webkit-animation: moveclouds 18s linear infinite;
+  -moz-animation: moveclouds 18s linear infinite;
+  -o-animation: moveclouds 18s linear infinite;
+}
+
+.x5 {
+  left: -150px;
+  top: -150px;
+  -webkit-transform: scale(0.8);
+  -moz-transform: scale(0.8);
+  transform: scale(0.8);
+  opacity: 0.8;
+  /*opacity proportional to the size*/
+  -webkit-animation: moveclouds 20s linear infinite;
+  -moz-animation: moveclouds 20s linear infinite;
+  -o-animation: moveclouds 20s linear infinite;
+}
+
+@-webkit-keyframes moveclouds {
+  0% {
+    margin-left: 800px;
+  }
+
+  100% {
+    margin-left: -800px;
+  }
+}
+
+
+@-moz-keyframes moveclouds {
+  0% {
+    margin-left: 800px;
+  }
+
+  100% {
+    margin-left: -800px;
+  }
+}
+
+
+@-o-keyframes moveclouds {
+  0% {
+    margin-left: 800px;
+  }
+
+  100% {
+    margin-left: -800px;
+  }
 }

@@ -6,5 +6,8 @@
     "chai": "^3.5.0",
     "mocha": "^3.2.0",
     "angular": "^1.6.2"
+  },
+  "dependencies": {
+    "angular-sanitize": "^1.6.4"
   }
 }

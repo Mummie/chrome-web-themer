@@ -18,17 +18,124 @@ port.onMessage.addListener(msg => {
 if (window.jQuery) {
     port.postMessage({ type: 'pageEvent', resources: 'jQuery' });
 }
-const htmlTextNodes = textNodesUnder(document.body);
 
-chrome.runtime.onMessage.addListener((msg, sender, response) => {
-    if (msg.from === 'addEditEvent') {
+
+function findByTextContent(needle, haystack, precise) {
+    // needle: String, the string to be found within the elements.
+    // haystack: String, a selector to be passed to document.querySelectorAll(),
+    //           NodeList, Array - to be iterated over within the function:
+    // precise: Boolean, true - searches for that precise string, surrounded by
+    //                          word-breaks,
+    //                   false - searches for the string occurring anywhere
+    var elems;
+
+    // no haystack we quit here, to avoid having to search
+    // the entire document:
+    if (!haystack) {
+        return false;
+    }
+    // if haystack is a string, we pass it to document.querySelectorAll(),
+    // and turn the results into an Array:
+    else if ('string' == typeof haystack) {
+        elems = [].slice.call(document.querySelectorAll(haystack), 0);
+    }
+    // if haystack has a length property, we convert it to an Array
+    // (if it's already an array, this is pointless, but not harmful):
+    else if (haystack.length) {
+        elems = [].slice.call(haystack, 0);
+    }
+
+    // work out whether we're looking at innerText (IE), or textContent
+    // (in most other browsers)
+    var textProp = 'textContent' in document ? 'textContent' : 'innerText',
+        // creating a regex depending on whether we want a precise match, or not:
+        reg = precise === true ? new RegExp('\\b' + needle + '\\b') : new RegExp(needle),
+        // iterating over the elems array:
+        found = elems.filter(function(el) {
+            // returning the elements in which the text is, or includes,
+            // the needle to be found:
+            return reg.test(el[textProp]);
+        });
+    return found.length ? found : false;
+}
+
+function findAndReplaceText(textToFind, textToReplace) {
+    return new Promise(function(resolve, reject) {
+        const pageElementsToSearch = document.querySelectorAll('a, p, span, h1, h2, h3, h4, h5, h6, label');
+        const matchingElements = findByTextContent(textToFind, pageElementsToSearch, false);
+        console.log(matchingElements);
+        let textreplaceEdits = [];
+        [].forEach.call(matchingElements, function(e) {
+            console.log('original', e);
+
+            e.textContent = e.textContent.replace(textToFind, textToReplace);
+            e.innerText = e.innerText.replace(textToFind, textToReplace);                    
+
+            console.log('changed', e.target.textContent);
+            textreplaceEdits.push({element: e.target, originalText: textToFind, replaceText: textToReplace});
+        });
+        if(textreplaceEdits.length <= 0) {
+            reject(false);
+        }
+        resolve(textreplaceEdits);
+    });
+}
+
+//textNodesUnder will use treewalkerAPI to find all text nodes
+const textNodesUnder = function(el) {
+    const rejectScriptTextFilter = {
+        acceptNode(node) {
+            switch (node) {
+                case node.parentNode.nodeName === 'SCRIPT' || 'STYLE':
+                    return NodeFilter.FILTER_REJECT;
+                case /^[\r\n ]+$/.test(node.data):
+                    return NodeFilter.FILTER_REJECT;
+                case /\s/.test(node.data):
+                    return NodeFilter.FILTER_REJECT;
+                case node.data === '↵':
+                    return NodeFilter.FILTER_REJECT;
+                default:
+                    return NodeFilter.FILTER_ACCEPT;
+            }
+        }
+    };
+
+    let n;
+    const a = [];
+    const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, rejectScriptTextFilter, false);
+    console.log(walk);
+    while ((n = walk.nextNode()) !== null) {
+        a.push(n);
+    }
+
+    return a;
+};
+
+
+chrome.extension.onRequest.addListener((req, sender, res) => {
+    if (req.find && req.replace) {
+        console.log(`find: ${req.find} \n replace: ${req.replace}`);
+        findAndReplaceText(req.find, req.replace).then(function(textEdits) {
+            console.log(textEdits);
+            if(textEdits.length > 1) {
+                res(textEdits);
+            }
+        }).catch(function(err) {
+            res(err);
+        });
+    }
+
+    if(req.command === 'editEvent') {
         showHoverStyle();
+        makeCursor('gray');
         document.body.addEventListener('click', e => {
             if (e.default) {
                 return;
             }
 
             e.preventDefault();
+            removeHoverStyle();
+
 
             // todo: add code that will create a variable that is a valid editable element. add check for this editable element with editableElement.contains(e.target) and use conditional to handle element/err
             e = e || window.event;
@@ -36,9 +143,10 @@ chrome.runtime.onMessage.addListener((msg, sender, response) => {
             const text = target.textContent || text.innerText;
             const path = getDomPath(e.target);
             const currentCSS = window.getComputedStyle(target);
+            runShadowInjections();
             console.log(`DOM Path ${path}`);
             if (target instanceof Element && target.id != 'undefined') {
-                const clickedElement = { 'element': target.tagName.toUpperCase(), text, 'id': target.id, 'class': target.className };
+                const clickedElement = { 'element': target.tagName.toUpperCase(), text, 'id': target.id, 'class': target.className, path };
                 console.log(clickedElement);
                 response(clickedElement);
             }
@@ -48,14 +156,26 @@ chrome.runtime.onMessage.addListener((msg, sender, response) => {
 
 function showHoverStyle() {
     document.body.addEventListener('mouseover', e => {
-        const overlay = document.createElement('div');
-        overlay.id = 'overlay';
-        wrapAll(e.target, overlay);
+        if(typeof e.target != 'undefined') {
+            console.log('hovering over', e.target);
+            console.log(e.target == this);
+            e.target.className += 'chrome-themer-elem-overlay';
+        }
     });
 
     document.body.addEventListener('mouseout', e => {
-        const hoverElem = e.target.getElementById('overlay');
-        e.target.removeChild(hoverElem);
+        e.target.className = e.target.className.replace(new RegExp('(/:^|\\s)' + 'chrome-themer-elem-overlay' + '(?:\\s|$)'), '');
+    });
+}
+
+function removeHoverStyle() {
+    document.body.removeEventListener('mouseover', function() {
+        let hoveredElem = document.getElementsByClassName('chrome-themer-elem-overlay');
+        if(hoveredElem.length > 1) {
+            [].forEach.call(hoveredElem, function(e) {
+                e.target.className = e.target.className.replace(new RegExp('(/:^|\\s)' + 'chrome-themer-elem-overlay' + '(?:\\s|$)'), '');
+            });
+        }
     });
 }
 
@@ -110,66 +230,8 @@ function getDomPath(el) {
     return stack.slice(1).join(' > '); // removes the html element
 }
 
-chrome.extension.onRequest.addListener((req, sender, res) => {
-    if (req.find && req.replace) {
-        console.log(`find: ${req.find} \n replace: ${req.replace}`);
-        findAndReplaceText(req.find, req.replace);
-        res(true);
-    } else {
-        res({});
-    }
-});
-
-//textNodesUnder will use treewalkerAPI to find all text nodes
-function textNodesUnder(el) {
-    const rejectScriptTextFilter = {
-        acceptNode(node) {
-            switch (node) {
-                case node.parentNode.nodeName === 'SCRIPT' || 'STYLE':
-                    return NodeFilter.FILTER_REJECT;
-                case /^[\r\n ]+$/.test(node.data):
-                    return NodeFilter.FILTER_REJECT;
-                case /\s/.test(node.data):
-                    return NodeFilter.FILTER_REJECT;
-                case node.data === '↵':
-                    return NodeFilter.FILTER_REJECT;
-                default:
-                    return NodeFilter.FILTER_ACCEPT;
-            }
-        }
-    };
-
-    let n;
-    const a = [];
-    const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, rejectScriptTextFilter, false);
-    while ((n = walk.nextNode()) !== null) {
-        a.push(n);
-    }
-
-    return a;
-}
-
-function findAndReplaceText(textToFind, textToReplace) {
-    if (!document.body) {
-        return false;
-    }
-
-    for (let i = 0, htmlArrLen = htmlTextNodes.length; i < htmlArrLen; i++) {
-        console.log(htmlTextNodes[i].innerText);
-        const phraseToSearch = new RegExp(`/\b${textToFind}\b/i`);
-        if (phraseToSearch.test(htmlTextNodes[i].innerText)) {
-            htmlTextNodes[i].innerText.replace(phraseToSearch, textToReplace);
-        }
-    }
-}
-
 // todo: need to set color variable to be a linear gradient that transitions the color pallete from background-y to default color i.e white
 // on click, take the cursor color to be rainbow and each second drain the color to white until timer reaches 5
-function loop() {
-    const color = `rgb(${(255 * Math.random()) | 0},${(255 * Math.random()) | 0},${(255 * Math.random()) | 0})`;
-    makeCursor(color);
-    setTimeout(loop, 5000);
-}
 
 function makeCursor(color) {
     const cursor = document.createElement('canvas');
@@ -178,7 +240,7 @@ function makeCursor(color) {
     cursor.width = 16;
     cursor.height = 16;
 
-    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
 
     ctx.lineWidth = 4;
     ctx.lineCap = 'round';

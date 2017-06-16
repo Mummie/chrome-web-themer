@@ -49,6 +49,7 @@
     }
   },
   "dependencies": {
+    "eslint-plugin-angular": "^2.5.0",
     "gulp-pug": "^3.2.0"
   }
 }
