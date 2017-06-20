@@ -8,6 +8,8 @@
     "angular": "^1.6.2"
   },
   "dependencies": {
-    "angular-sanitize": "^1.6.4"
+    "angular-sanitize": "^1.6.4",
+    "angular-cookies": "^1.6.4",
+    "angular-bootstrap-colorpicker": "^3.0.31"
   }
 }

@@ -1,13 +1,19 @@
 // AngularJS controller and directive code
-const app = angular.module('themerApp', ['ContentScriptFactory']);
-app.controller('EditController', function($scope, ContentScriptFactory) {
+const app = angular.module('themerApp', ['ContentScriptFactory', 'ngCookies', 'colorpicker.module']);
+app.controller('EditController', function($scope, $cookies, ContentScriptFactory) {
     $scope.toggleTextReplace = false;
     $scope.showTab = 'Edit';
+    $scope.color = '#000';
     $scope.triggerEditElementAction = function() {
         ContentScriptFactory.triggerEditAction().then(function(editedElement) {
             console.log('edit', editedElement);
         });
     };
+
+
+
+    $scope.txtFind = $cookies.get('find');
+    $scope.txtReplace = $cookies.get('replace');
 
     $scope.filters = {};
     $scope.filters.colorblind = [{
@@ -18,9 +24,20 @@ app.controller('EditController', function($scope, ContentScriptFactory) {
         selected: false
     }];
 
+    $scope.changeBackgroundColor = function() {
+      const colorObj = { command: 'changeColor', color: $scope.color };
+      chrome.tabs.getSelected(null, function(tab) {
+        chrome.tabs.sendRequest(tab.id, colorObj, function(res) {
+          console.log(res);
+        });
+      });
+    };
+
     $scope.textReplace = function() {
         console.log($scope.txtReplace);
         if ($scope.txtReplace && $scope.txtReplace.length > 0) {
+            $cookies.putObject('find', $scope.txtFind);
+            $cookies.putObject('replace', $scope.txtReplace);
             const txtRplObj = {
                 find: $scope.txtFind,
                 replace: $scope.txtReplace

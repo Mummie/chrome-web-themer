@@ -6,18 +6,16 @@
     <link href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" rel="stylesheet">
     <link href="styles/main.css" rel="stylesheet">
     <link href="bower_components/angular/angular-csp.css" rel="stylesheet">
-    <script src="bower_components/angular/angular.js">
-    </script>
-    <script src="bower_components/angular-sanitize/angular-sanitize.min.js">
-    </script>
+    <link rel="stylesheet" href="bower_components/angular-bootstrap-colorpicker/css/colorpicker.min.css" />
 
-    <script src="scripts/popup.js">
-    </script>
-    <script src="scripts/background.js">
-    </script>
+    <script src="bower_components/angular/angular.js"></script>
+    <script src="bower_components/angular-sanitize/angular-sanitize.min.js"></script>
+    <script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
+    <script src="bower_components/angular-bootstrap-colorpicker/js/bootstrap-colorpicker-module.min.js"></script>
+    <script src="scripts/popup.js"></script>
+    <script src="scripts/background.js"></script>
     <script src="scripts/app_factory.js"></script>
-    <script src="scripts/app.js">
-    </script>
+    <script src="scripts/app.js"></script>
 </head>
 
 <body ng-app="themerApp">
@@ -34,7 +32,7 @@
         </div>
         <div id="clouds">
             <h1>Chrome Web Themer</h1>
-            <div class="cloud x1"></div>            
+            <div class="cloud x1"></div>
             <!-- Time for multiple clouds to dance around -->
             <div class="cloud x2"></div>
             <div class="pure-g">
@@ -50,7 +48,7 @@
                     <form class="pure-form pure-form-aligned" ng-show="toggleTextReplace" ng-cloak>
                         <div class="pure-control-group">
                             <label class="normal" for="find-text">Find:</label>
-                            <input class="txt-replace-input" id="find-text" type="text" ng-model="txtFind">
+                            <input class="txt-replace-input" id="find-text" type="text" ng-model="txtFind" ng-change="saveFindTextValue()">
                         </div>
                         <div class="pure-control-group">
                             <label class="normal" for="replace-text">Replace:</label>
@@ -58,6 +56,9 @@
                         </div>
                         <button type="submit" ng-click="textReplace()" class="pure-button pure-button-primary">Replace</button>
                     </form>
+                    <a class="show-filter" ng-click="changeBackgroundColor()">Change Background Color</a>
+                    <input colorpicker type="text" ng-model="color" />
+
                 </div>
                 <div class="row" ng-show="showTab == 'Filters'" ng-cloak>
                     <div class="card">

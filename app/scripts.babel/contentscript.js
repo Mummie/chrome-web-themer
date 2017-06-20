@@ -11,13 +11,6 @@ injectCSS.setAttribute('href', cssPath);
 document.querySelector('head').append(injectCSS);
 
 const port = chrome.runtime.connect({ name: 'commandHandler' });
-port.onMessage.addListener(msg => {
-    // check for messages from parent event, such as SHA256, scope funcitonality etc
-});
-
-if (window.jQuery) {
-    port.postMessage({ type: 'pageEvent', resources: 'jQuery' });
-}
 
 
 function findByTextContent(needle, haystack, precise) {
@@ -60,25 +53,20 @@ function findByTextContent(needle, haystack, precise) {
 }
 
 function findAndReplaceText(textToFind, textToReplace) {
-    return new Promise(function(resolve, reject) {
-        const pageElementsToSearch = document.querySelectorAll('a, p, span, h1, h2, h3, h4, h5, h6, label');
-        const matchingElements = findByTextContent(textToFind, pageElementsToSearch, false);
-        console.log(matchingElements);
-        let textreplaceEdits = [];
-        [].forEach.call(matchingElements, function(e) {
-            console.log('original', e);
+    const pageElementsToSearch = document.querySelectorAll('a, p, span, h1, h2, h3, h4, h5, h6, label');
+    const matchingElements = findByTextContent(textToFind, pageElementsToSearch, false);
+    console.log(matchingElements);
+    let textreplaceEdits = [];
+    [].forEach.call(matchingElements, function(e) {
+        console.log('original', e);
 
-            e.textContent = e.textContent.replace(textToFind, textToReplace);
-            e.innerText = e.innerText.replace(textToFind, textToReplace);                    
+        e.textContent = e.textContent.replace(textToFind, textToReplace);
+        e.innerText = e.innerText.replace(textToFind, textToReplace);
 
-            console.log('changed', e.target.textContent);
-            textreplaceEdits.push({element: e.target, originalText: textToFind, replaceText: textToReplace});
-        });
-        if(textreplaceEdits.length <= 0) {
-            reject(false);
-        }
-        resolve(textreplaceEdits);
+        console.log('changed', e.textContent);
+        textreplaceEdits.push({ element: e.target, originalText: textToFind, replaceText: textToReplace });
     });
+    return textreplaceEdits;
 }
 
 //textNodesUnder will use treewalkerAPI to find all text nodes
@@ -115,14 +103,12 @@ const textNodesUnder = function(el) {
 chrome.extension.onRequest.addListener((req, sender, res) => {
     if (req.find && req.replace) {
         console.log(`find: ${req.find} \n replace: ${req.replace}`);
-        findAndReplaceText(req.find, req.replace).then(function(textEdits) {
-            console.log(textEdits);
-            if(textEdits.length > 1) {
-                res(textEdits);
-            }
-        }).catch(function(err) {
-            res(err);
-        });
+        const textEdits = findAndReplaceText(req.find, req.replace);
+        if(textEdits.length > 1) {
+          res(textEdits);
+        } else {
+          res(textEdits);
+        }
     }
 
     if(req.command === 'editEvent') {
@@ -146,11 +132,17 @@ chrome.extension.onRequest.addListener((req, sender, res) => {
             runShadowInjections();
             console.log(`DOM Path ${path}`);
             if (target instanceof Element && target.id != 'undefined') {
-                const clickedElement = { 'element': target.tagName.toUpperCase(), text, 'id': target.id, 'class': target.className, path };
+                const clickedElement = { 'element': target.tagName.toUpperCase(), text, 'id': target.id, 'class': target.className, path, 'css': currentCSS };
                 console.log(clickedElement);
                 response(clickedElement);
             }
         });
+    }
+
+    if(req.command === 'changeColor' && req.color) {
+      console.log('changing background color to ' + req.color)
+      document.body.style.backgroundColor = req.color;
+      res(true);
     }
 });
 
@@ -158,7 +150,6 @@ function showHoverStyle() {
     document.body.addEventListener('mouseover', e => {
         if(typeof e.target != 'undefined') {
             console.log('hovering over', e.target);
-            console.log(e.target == this);
             e.target.className += 'chrome-themer-elem-overlay';
         }
     });

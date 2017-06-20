@@ -48,7 +48,7 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
             });
           });
           break;
-        
+
         case 'SaveEdit':
             saveEditToURL(request.url, request.edits);
             sendResponse({
