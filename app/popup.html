@@ -56,8 +56,8 @@
                         </div>
                         <button type="submit" ng-click="textReplace()" class="pure-button pure-button-primary">Replace</button>
                     </form>
-                    <a class="show-filter" ng-click="changeBackgroundColor()">Change Background Color</a>
-                    <input colorpicker type="text" ng-model="color" />
+                    <label>Change Background Color</label>
+                    <input class="small-button pure-button" colorpicker type="text" ng-model="color" ng-change="changeBackgroundColor()" />
 
                 </div>
                 <div class="row" ng-show="showTab == 'Filters'" ng-cloak>
