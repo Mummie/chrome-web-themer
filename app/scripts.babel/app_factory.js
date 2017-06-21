@@ -41,5 +41,19 @@ app.factory('ContentScriptFactory', function($q, $timeout) {
     }
   };
 
-  return {triggerEditAction: triggerEditAction, textReplaceAction: textReplaceAction};
+  let saveBackgroundColorEdit = function(url, edit) {
+    let deferred = $q.defer();
+    let obj = {};
+    obj[url] = [
+      {
+        'backgroundColor': edit
+      }
+    ];
+    chrome.storage.sync.set(obj, function() {
+      deferred.resolve(true);
+    });
+    return deferred.promise;
+  };
+
+  return {triggerEditAction: triggerEditAction, textReplaceAction: textReplaceAction, saveBackgroundColorEdit: saveBackgroundColorEdit};
 });

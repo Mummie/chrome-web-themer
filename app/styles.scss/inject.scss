@@ -1,12 +1,43 @@
-.chrome-web-themer-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
+.chrome-web-themer-overlay,
+.chrome-web-themer-overlay:hover {
+    position: relative;
+    border: 1px solid #000;
+    background-color: rgba(0, 191, 255, 0.5);
+}
+
+.tall {
+    height: 200px;
+}
+
+.onclick-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.onclick-menu:before {
+    content: "click me!";
+}
+
+.onclick-menu:focus {
+    /* clicking on label should toggle the menu */
     pointer-events: none;
-    background-color: rgba(0, 0, 0, .75);
-    width: 100%;
-    outline: #f00 solid 2px;
-    height: 100%;
+}
+
+.onclick-menu:focus .onclick-menu-content {
+    /*  opacity is 1 in opened state (see below) */
+    opacity: 1;
+    visibility: visible;
+    /* don't let pointer-events affect descendant elements */
+    pointer-events: auto;
+}
+
+.onclick-menu-content {
+    position: absolute;
+    z-index: 1;
+    /* use opacity to fake immediate toggle */
+    opacity: 0;
+    visibility: hidden;
+    transition: visibility 0.5s;
 }
 
 html {

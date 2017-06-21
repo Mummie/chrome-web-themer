@@ -11,7 +11,42 @@ injectCSS.setAttribute('href', cssPath);
 document.querySelector('head').append(injectCSS);
 
 const port = chrome.runtime.connect({ name: 'commandHandler' });
+if (!window.jQuery) {
+    injectJQuery();
+}
 
+// content script now has access to jQuery object
+
+function injectJQuery() {
+    const path = chrome.extension.getURL('scripts/jquery.slim.min.js');
+    const injectDomTraverse = document.createElement('script');
+    injectDomTraverse.setAttribute('type', 'text/javascript');
+    injectDomTraverse.setAttribute('src', path);
+    document.querySelector('head').appendChild(injectDomTraverse);
+}
+
+function injectJQueryUI() {
+    const path = chrome.extension.getURL('scripts/jquery.mobile.min.js');
+    const injectDomTraverse = document.createElement('script');
+    injectDomTraverse.setAttribute('type', 'text/javascript');
+    injectDomTraverse.setAttribute('src', path);
+    document.querySelector('head').appendChild(injectDomTraverse);
+    const cssPath = chrome.extension.getURL('styles/jquery.mobile.structure.min.css');
+    const injectCSS = document.createElement('link');
+    injectCSS.setAttribute('rel', 'stylesheet');
+    injectCSS.setAttribute('type', 'text/css');
+    injectCSS.setAttribute('href', cssPath);
+
+    document.querySelector('head').append(injectCSS);
+}
+
+document.onkeypress = evt => {
+    evt = evt || window.event;
+    if (evt.keyCode === 27) {
+        //esc key was pressed
+        removeHoverStyle();
+    }
+};
 
 function findByTextContent(needle, haystack, precise) {
     // needle: String, the string to be found within the elements.
@@ -20,7 +55,7 @@ function findByTextContent(needle, haystack, precise) {
     // precise: Boolean, true - searches for that precise string, surrounded by
     //                          word-breaks,
     //                   false - searches for the string occurring anywhere
-    var elems;
+    let elems;
 
     // no haystack we quit here, to avoid having to search
     // the entire document:
@@ -40,24 +75,25 @@ function findByTextContent(needle, haystack, precise) {
 
     // work out whether we're looking at innerText (IE), or textContent
     // (in most other browsers)
-    var textProp = 'textContent' in document ? 'textContent' : 'innerText',
-        // creating a regex depending on whether we want a precise match, or not:
-        reg = precise === true ? new RegExp('\\b' + needle + '\\b') : new RegExp(needle),
-        // iterating over the elems array:
-        found = elems.filter(function(el) {
-            // returning the elements in which the text is, or includes,
-            // the needle to be found:
-            return reg.test(el[textProp]);
-        });
+    const textProp = 'textContent' in document ? 'textContent' : 'innerText';
+
+    const // creating a regex depending on whether we want a precise match, or not:
+    reg = precise === true ? new RegExp(`\\b${needle}\\b`) : new RegExp(needle);
+
+    const // iterating over the elems array:
+    found = elems.filter(el => // returning the elements in which the text is, or includes,
+    // the needle to be found:
+    reg.test(el[textProp]));
+
     return found.length ? found : false;
 }
 
 function findAndReplaceText(textToFind, textToReplace) {
     const pageElementsToSearch = document.querySelectorAll('a, p, span, h1, h2, h3, h4, h5, h6, label');
-    const matchingElements = findByTextContent(textToFind, pageElementsToSearch, false);
+    const matchingElements = findByTextContent(textToFind, pageElementsToSearch, true);
     console.log(matchingElements);
     let textreplaceEdits = [];
-    [].forEach.call(matchingElements, function(e) {
+    [].forEach.call(matchingElements, e => {
         console.log('original', e);
 
         e.textContent = e.textContent.replace(textToFind, textToReplace);
@@ -69,51 +105,20 @@ function findAndReplaceText(textToFind, textToReplace) {
     return textreplaceEdits;
 }
 
-//textNodesUnder will use treewalkerAPI to find all text nodes
-const textNodesUnder = function(el) {
-    const rejectScriptTextFilter = {
-        acceptNode(node) {
-            switch (node) {
-                case node.parentNode.nodeName === 'SCRIPT' || 'STYLE':
-                    return NodeFilter.FILTER_REJECT;
-                case /^[\r\n ]+$/.test(node.data):
-                    return NodeFilter.FILTER_REJECT;
-                case /\s/.test(node.data):
-                    return NodeFilter.FILTER_REJECT;
-                case node.data === '↵':
-                    return NodeFilter.FILTER_REJECT;
-                default:
-                    return NodeFilter.FILTER_ACCEPT;
-            }
-        }
-    };
-
-    let n;
-    const a = [];
-    const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, rejectScriptTextFilter, false);
-    console.log(walk);
-    while ((n = walk.nextNode()) !== null) {
-        a.push(n);
-    }
-
-    return a;
-};
-
 
 chrome.extension.onRequest.addListener((req, sender, res) => {
     if (req.find && req.replace) {
-        console.log(`find: ${req.find} \n replace: ${req.replace}`);
         const textEdits = findAndReplaceText(req.find, req.replace);
-        if(textEdits.length > 1) {
-          res(textEdits);
-        } else {
-          res(textEdits);
+        if (textEdits.length > 1) {
+            res(textEdits);
         }
     }
 
-    if(req.command === 'editEvent') {
+    if (req.command === 'editEvent') {
+        injectHtmlTraverseScript();
         showHoverStyle();
         makeCursor('gray');
+        console.log($('body').html());
         document.body.addEventListener('click', e => {
             if (e.default) {
                 return;
@@ -134,37 +139,38 @@ chrome.extension.onRequest.addListener((req, sender, res) => {
             if (target instanceof Element && target.id != 'undefined') {
                 const clickedElement = { 'element': target.tagName.toUpperCase(), text, 'id': target.id, 'class': target.className, path, 'css': currentCSS };
                 console.log(clickedElement);
-                response(clickedElement);
+                res(clickedElement);
             }
         });
     }
 
-    if(req.command === 'changeColor' && req.color) {
-      console.log('changing background color to ' + req.color)
-      document.body.style.backgroundColor = req.color;
-      res(true);
+    if (req.command === 'changeColor' && req.color) {
+        document.body.style.backgroundColor = req.color;
+        res({ element: 'BODY', css: `background-color: ${req.color}`});
     }
 });
 
 function showHoverStyle() {
     document.body.addEventListener('mouseover', e => {
-        if(typeof e.target != 'undefined') {
+        if (typeof e.target != 'undefined') {
             console.log('hovering over', e.target);
-            e.target.className += 'chrome-themer-elem-overlay';
+            if (!e.target.classList.contains('chrome-web-themer-overlay')) {
+                e.target.className += ' chrome-web-themer-overlay';
+            }
         }
     });
 
     document.body.addEventListener('mouseout', e => {
-        e.target.className = e.target.className.replace(new RegExp('(/:^|\\s)' + 'chrome-themer-elem-overlay' + '(?:\\s|$)'), '');
+        e.target.className = e.target.className.replace(new RegExp('(/:^|\\s)' + 'chrome-web-themer-overlay' + '(?:\\s|$)'), '');
     });
 }
 
 function removeHoverStyle() {
-    document.body.removeEventListener('mouseover', function() {
-        let hoveredElem = document.getElementsByClassName('chrome-themer-elem-overlay');
-        if(hoveredElem.length > 1) {
-            [].forEach.call(hoveredElem, function(e) {
-                e.target.className = e.target.className.replace(new RegExp('(/:^|\\s)' + 'chrome-themer-elem-overlay' + '(?:\\s|$)'), '');
+    document.body.removeEventListener('mouseover', () => {
+        let hoveredElem = document.getElementsByClassName('chrome-web-themer-overlay');
+        if (hoveredElem.length > 1) {
+            [].forEach.call(hoveredElem, e => {
+                e.target.className = e.target.className.replace(new RegExp('(/:^|\\s)' + 'chrome-web-themer-overlay' + '(?:\\s|$)'), '');
             });
         }
     });
@@ -174,7 +180,6 @@ function removeHoverStyle() {
 // Just pass a collection of nodes, and a wrapper element
 function wrapAll(nodes, wrapper) {
     // Cache the current parent and previous sibling of the first node.
-    console.log(nodes);
     const parent = nodes.parentNode;
     const previousSibling = nodes.previousSibling;
 
@@ -520,13 +525,4 @@ const runShadowInjections = () => {
         window.hasrun = true;
         return true;
     }
-
-    // document.body.style.backgroundColor = 'black';
-    // document.body.onclick = function(e) {
-    //     e = e || window.event;
-    //     var target = e.target || e.srcElement,
-    //         text = target.textContent || text.innerText;
-    //     console.log(target);
-    //     console.log(text);
-    // };
 };

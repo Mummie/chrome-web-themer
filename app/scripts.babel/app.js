@@ -4,6 +4,7 @@ app.controller('EditController', function($scope, $cookies, ContentScriptFactory
     $scope.toggleTextReplace = false;
     $scope.showTab = 'Edit';
     $scope.color = '#000';
+
     $scope.triggerEditElementAction = function() {
         ContentScriptFactory.triggerEditAction().then(function(editedElement) {
             console.log('edit', editedElement);
@@ -28,7 +29,11 @@ app.controller('EditController', function($scope, $cookies, ContentScriptFactory
       const colorObj = { command: 'changeColor', color: $scope.color };
       chrome.tabs.getSelected(null, function(tab) {
         chrome.tabs.sendRequest(tab.id, colorObj, function(res) {
-          console.log(res);
+          if(res.element && res.css) {
+            ContentScriptFactory.saveBackgroundColorEdit(tab.url, res).then(function(isSaved) {
+              console.log(isSaved);
+            });
+          }
         });
       });
     };
@@ -68,6 +73,23 @@ app.controller('EditController', function($scope, $cookies, ContentScriptFactory
     $scope.$on('error', function(event, data) {
         $scope.errMessage = data;
     });
+});
+app.directive('rainbowTextDir', function($compile, $log) {
+  return {
+    restrict: 'EA',
+    replace: false,
+    scope: true,
+    link: function(scope, element) {
+      let html = 'Chrome Web Themer';
+      let chars = html.trim().split('');
+      console.log(html);
+      $log.debug(chars);
+      let template = '<span>' + chars.join('</span><span>') + '</span';
+      const linkFn = $compile(template);
+      const content = linkFn(scope);
+      element.append(content);
+    }
+  };
 });
 
 app.directive('editButtonDirective', function($compile) {
