@@ -9,35 +9,23 @@
     height: 200px;
 }
 
-.onclick-menu {
-    position: relative;
-    display: inline-block;
+#edit-popup-menu {
+    z-index:2;
+    position:absolute;
+    width:150px;
+    background: black;
+    color: #FFF;
+    display: none;
+    top: 0;
+    left: 100px;
 }
-
-.onclick-menu:before {
-    content: "click me!";
+#edit-popup-menu ul {
+    list-style:none;
 }
-
-.onclick-menu:focus {
-    /* clicking on label should toggle the menu */
-    pointer-events: none;
-}
-
-.onclick-menu:focus .onclick-menu-content {
-    /*  opacity is 1 in opened state (see below) */
-    opacity: 1;
-    visibility: visible;
-    /* don't let pointer-events affect descendant elements */
-    pointer-events: auto;
-}
-
-.onclick-menu-content {
-    position: absolute;
-    z-index: 1;
-    /* use opacity to fake immediate toggle */
-    opacity: 0;
-    visibility: hidden;
-    transition: visibility 0.5s;
+#edit-popup-menu ul li {
+    list-style: none;
+    color: #FFF;
+    height: 50px;
 }
 
 html {

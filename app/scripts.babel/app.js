@@ -28,8 +28,8 @@ app.controller('EditController', function($scope, $cookies, ContentScriptFactory
     $scope.changeBackgroundColor = function() {
       const colorObj = { command: 'changeColor', color: $scope.color };
       chrome.tabs.getSelected(null, function(tab) {
-        chrome.tabs.sendRequest(tab.id, colorObj, function(res) {
-          if(res.element && res.css) {
+        chrome.tabs.sendMessage(tab.id, colorObj, function(res) {
+          if(res.element && res.color) {
             ContentScriptFactory.saveBackgroundColorEdit(tab.url, res).then(function(isSaved) {
               console.log(isSaved);
             });
@@ -39,7 +39,6 @@ app.controller('EditController', function($scope, $cookies, ContentScriptFactory
     };
 
     $scope.textReplace = function() {
-        console.log($scope.txtReplace);
         if ($scope.txtReplace && $scope.txtReplace.length > 0) {
             $cookies.putObject('find', $scope.txtFind);
             $cookies.putObject('replace', $scope.txtReplace);
@@ -49,20 +48,11 @@ app.controller('EditController', function($scope, $cookies, ContentScriptFactory
             };
             chrome.tabs.getSelected(null, function(tab) {
                 const url = tab.url;
-                chrome.tabs.sendRequest(tab.id, txtRplObj, function(res) {
-                    console.log(res);
+                chrome.tabs.sendMessage(tab.id, txtRplObj, function(res) {
                     if (typeof res != 'undefined') {
-
-                        chrome.extension.sendMessage({
-                                command: "SaveEdit",
-                                url,
-                                edits: res
-                            },
-                            function(cmdRes) {
-                                if (cmdRes.success) {
-                                    console.log('Saved from App');
-                                }
-                            });
+                      ContentScriptFactory.textReplaceAction(url, res).then(function(isSaved) {
+                        console.log(isSaved);
+                      });
                     }
                 });
             });
@@ -74,7 +64,7 @@ app.controller('EditController', function($scope, $cookies, ContentScriptFactory
         $scope.errMessage = data;
     });
 });
-app.directive('rainbowTextDir', function($compile, $log) {
+app.directive('rainbowTextDir', function($compile) {
   return {
     restrict: 'EA',
     replace: false,
@@ -82,8 +72,6 @@ app.directive('rainbowTextDir', function($compile, $log) {
     link: function(scope, element) {
       let html = 'Chrome Web Themer';
       let chars = html.trim().split('');
-      console.log(html);
-      $log.debug(chars);
       let template = '<span>' + chars.join('</span><span>') + '</span';
       const linkFn = $compile(template);
       const content = linkFn(scope);

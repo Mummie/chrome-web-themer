@@ -1,6 +1,6 @@
 {
     "name": "Chrome Web Themer",
-    "version": "0.3.1",
+    "version": "0.3.4",
     "manifest_version": 2,
     "description": "__MSG_appDescription__",
     "icons": {
@@ -12,15 +12,15 @@
             "scripts/chromereload.js",
             "scripts/background.js"
         ],
-        "persistent": true
+        "persistent": false
     },
     "content_scripts": [{
         "run_at": "document_end",
         "matches": ["http://*/*", "https://*/*"],
-        "js": ["scripts/jquery.slim.min.js", "scripts/contentscript.js"],
-        "css": ["styles/jquery.mobile.structure.min.css", "styles/inject.css"]
+        "js": ["scripts/jquery.min.js", "scripts/contentscript.js"],
+        "css": ["styles/inject.css"]
     }],
-    "web_accessible_resources": ["scripts/jquery.slim.min.js", "scripts/contentscript.js", "styles/jquery.mobile.structure.min.css", "styles/inject.css"],
+    "web_accessible_resources": ["scripts/jquery.min.js", "scripts/contentscript.js", "styles/inject.css"],
     "permissions": [
         "tabs",
         "background",

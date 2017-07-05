@@ -1,27 +1,7 @@
 'use strict';
-
 chrome.runtime.onInstalled.addListener(details => {
   console.log('previousVersion', details.previousVersion);
 });
-
-// Inject our Angular app, taking care
-// not to interfere with page's Angular (if any)
-function injectAngular(tabId) {
-  // Prevent immediate automatic bootstrapping
-  chrome.tabs.executeScript(tabId, {
-    code: 'window.name = "NG_DEFER_BOOTSTRAP!" + window.name;'
-  }, function() {
-    // Inject AngularJS
-    chrome.tabs.executeScript(tabId, {
-      file: '../bower_components/angular/angular.js'
-    }, function() {
-      // Inject our app's script
-      chrome.tabs.executeScript(tabId, {
-        file: 'app.js'
-      });
-    });
-  });
-}
 
 function saveEditToURL(url, edits) {
     var obj = {};
@@ -30,6 +10,33 @@ function saveEditToURL(url, edits) {
         console.log('Settings Saved', obj);
     });
 }
+
+var currentURL = '';
+
+chrome.tabs.query({ 'active': true, 'currentWindow': true }, function(tabs) {
+    currentURL = tabs[0].url;
+    chrome.storage.sync.get(`${currentURL}`, function(edits) {
+      if (Object.keys(edits).length < 1) {
+        console.log(`No edits saved for this site ${currentURL}`);
+      } else {
+        // edits will be an array of css styles, changes to text and DOM elements
+        console.log(edits);
+        chrome.tabs.sendMessage(tabs[0].id, { pageEdits: edits[currentURL] });
+      }
+    });
+
+});
+
+chrome.runtime.onConnect.addListener(function(port, sender, res) {
+  console.assert(port.name === "editHandler");
+
+  port.onMessage.addListener(function(msg) {
+    if (msg.editElement && msg.editElement.element.length > 0) {
+      // do stuff for validating and saving edited element to current tab url page
+      console.log(msg.editElement);
+    }
+  });
+});
 
 chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
       switch (request.command) {
@@ -56,10 +63,4 @@ chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
             });
             break;
       }
-    });
-
-    // Call `injectAngular()` when the user clicks the browser-action button
-    chrome.browserAction.onClicked.addListener(function(tab) {
-      console.log('clicked browser action');
-      injectAngular(tab.id);
     });

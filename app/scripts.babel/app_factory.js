@@ -26,34 +26,50 @@ app.factory('ContentScriptFactory', function($q, $timeout) {
     return deferred.promise;
   };
 
-  let textReplaceAction = function(txtFind, txtReplace) {
-    if (txtReplace && txtReplace.length > 0) {
-      const txtRplObj = {
-        find: txtFind,
-        replace: txtReplace
-      };
-      chrome.tabs.getSelected(null, function(tab) {
-        const url = tab.url;
-        chrome.tabs.sendRequest(tab.id, txtRplObj, function(res) {
-          return {command: 'SaveEdit', url, edits: res};
+  let textReplaceAction = function(url, textEdits) {
+    let deferred = $q.defer();
+    chrome.storage.sync.get(url, function(pageEdits) {
+      if (pageEdits.length > 1 && pageEdits.textReplaceEdits.length > 1) {
+        let obj = {
+          textEdits
+        };
+        pageEdits.textReplaceEdits.push(obj);
+        console.log(pageEdits.textReplaceEdits);
+        chrome.storage.sync.set(pageEdits.textReplaceEdits, function() {
+          deferred.resolve(true);
         });
-      });
-    }
+      } else {
+        let obj = {};
+        obj[url]['textReplaceEdits'] = [textEdits];
+
+        chrome.storage.sync.set(obj, function() {
+          deferred.resolve(true);
+        });
+      }
+
+    });
+
+    return deferred.promise;
   };
 
   let saveBackgroundColorEdit = function(url, edit) {
     let deferred = $q.defer();
-    let obj = {};
-    obj[url] = [
-      {
-        'backgroundColor': edit
-      }
-    ];
-    chrome.storage.sync.set(obj, function() {
-      deferred.resolve(true);
+    chrome.storage.sync.get(url, function(pageEdits) {
+      console.log('page edit l from factory ', pageEdits);
+      let obj = {};
+      obj[url].backgroundColor = edit;
+      console.log(obj[url].backgroundColor);
+        chrome.storage.sync.set(obj[url].backgroundColor, function() {
+          deferred.resolve(true);
+        });
     });
+
     return deferred.promise;
   };
 
-  return {triggerEditAction: triggerEditAction, textReplaceAction: textReplaceAction, saveBackgroundColorEdit: saveBackgroundColorEdit};
+  return {
+    triggerEditAction: triggerEditAction,
+    textReplaceAction: textReplaceAction,
+    saveBackgroundColorEdit: saveBackgroundColorEdit
+  };
 });
