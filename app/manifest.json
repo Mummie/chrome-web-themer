@@ -17,10 +17,10 @@
     "content_scripts": [{
         "run_at": "document_end",
         "matches": ["http://*/*", "https://*/*"],
-        "js": ["scripts/jquery.min.js", "scripts/contentscript.js"],
-        "css": ["styles/inject.css"]
+        "js": ["bower_components/angular/angular.min.js", "scripts/contentscript.js"],
+        "css": ["bower_components/angular/angular-csp.css", "styles/inject.css"]
     }],
-    "web_accessible_resources": ["scripts/jquery.min.js", "scripts/contentscript.js", "styles/inject.css"],
+    "web_accessible_resources": ["bower_components/angular/*", "scripts/contentscript.js", "styles/inject.css"],
     "permissions": [
         "tabs",
         "background",

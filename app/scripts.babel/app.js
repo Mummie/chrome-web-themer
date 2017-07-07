@@ -1,9 +1,22 @@
 // AngularJS controller and directive code
-const app = angular.module('themerApp', ['ContentScriptFactory', 'ngCookies', 'colorpicker.module']);
-app.controller('EditController', function($scope, $cookies, ContentScriptFactory) {
+
+const app = angular.module('themerApp', ['ContentScriptFactory', 'ngCookies', 'colorpicker.module', 'ngLodash']);
+app.controller('EditController', function($scope, $cookies, ContentScriptFactory, lodash) {
     $scope.toggleTextReplace = false;
     $scope.showTab = 'Edit';
     $scope.color = '#000';
+    $scope.edits = null;
+    $scope.showEdit = '';
+
+    ContentScriptFactory.getCurrentURLEdits().then(function(edits) {
+      if(!lodash.isEmpty(edits)) {
+        $scope.edits = lodash.assign({}, edits);
+        console.log('Saved Edits ', $scope.edits);
+        if($scope.edits.backgroundColor && $scope.edits.backgroundColor.color) {
+          $scope.color = $scope.edits.backgroundColor.color;
+        }
+      }
+    });
 
     $scope.triggerEditElementAction = function() {
         ContentScriptFactory.triggerEditAction().then(function(editedElement) {
@@ -17,19 +30,12 @@ app.controller('EditController', function($scope, $cookies, ContentScriptFactory
     $scope.txtReplace = $cookies.get('replace');
 
     $scope.filters = {};
-    $scope.filters.colorblind = [{
-        mode: 'Protonopia',
-        selected: false
-    }, {
-        mode: 'Deuteranopia',
-        selected: false
-    }];
 
     $scope.changeBackgroundColor = function() {
       const colorObj = { command: 'changeColor', color: $scope.color };
       chrome.tabs.getSelected(null, function(tab) {
         chrome.tabs.sendMessage(tab.id, colorObj, function(res) {
-          if(res.element && res.color) {
+          if(res && res.color) {
             ContentScriptFactory.saveBackgroundColorEdit(tab.url, res).then(function(isSaved) {
               console.log(isSaved);
             });

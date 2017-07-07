@@ -12,6 +12,10 @@
     "jquery-ui": "^1.12.1",
     "jquery-mobile": "^1.4.5",
     "jquery": "^3.2.1",
-    "lodash": "^4.17.4"
+    "lodash": "^4.17.4",
+    "ng-lodash": "^0.5.0"
+  },
+  "resolutions": {
+    "angular": "^1.6.2"
   }
 }

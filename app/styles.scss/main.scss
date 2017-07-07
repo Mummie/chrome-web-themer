@@ -45,7 +45,7 @@ $font_3: sans-serif;
 
 body {
     width: 300px;
-    overflow: hidden;
+    overflow: scroll;
     font-family: 'Ubuntu';
     letter-spacing: 0.2em;
     font-size: 18px;
@@ -496,11 +496,9 @@ input[type="checkbox"] {
 .pure-button {
   width: 80px;
   color: white;
+  background-color: darkslategrey;
+  border-radius: 5px;
 }
-/*Lets start with the cloud formation rather*/
-
-
-/*The container will also serve as the SKY*/
 
 #clouds {
     padding: 100px 0;
@@ -897,7 +895,7 @@ animation-delay:4s;
     text-decoration: none;
     color: #eee;
     text-transform: uppercase;
-    font-size: 21px;
+    font-size: 22px;
     line-height: 15px;
 }
 
