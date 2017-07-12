@@ -49,8 +49,10 @@
     }
   },
   "dependencies": {
+    "angular2": "^2.0.0-beta.21",
     "color-blind": "^0.1.1",
     "eslint-plugin-angular": "^2.5.0",
-    "gulp-pug": "^3.2.0"
+    "gulp-pug": "^3.2.0",
+    "postcss-colorblind": "^1.0.0"
   }
 }

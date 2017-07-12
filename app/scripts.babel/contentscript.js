@@ -139,6 +139,7 @@ app.controller('MainController', function($scope) {
       };
       console.log(clickedElement);
       return clickedElement;
+    }
   };
 
   $scope.removeHoverStyle = function(e) {
@@ -207,7 +208,7 @@ app.directive('editPopupMenu', function($compile) {
         element.append(content);
       });
     }
-  }
+  };
 });
 
 app.directive('clickOff', function($parse, $document) {

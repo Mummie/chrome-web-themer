@@ -1,75 +1,105 @@
 // AngularJS controller and directive code
 
 const app = angular.module('themerApp', ['ContentScriptFactory', 'ngCookies', 'colorpicker.module', 'ngLodash']);
-app.controller('EditController', function($scope, $cookies, ContentScriptFactory, lodash) {
-    $scope.toggleTextReplace = false;
-    $scope.showTab = 'Edit';
-    $scope.color = '#000';
-    $scope.edits = null;
-    $scope.showEdit = '';
 
-    ContentScriptFactory.getCurrentURLEdits().then(function(edits) {
-      if(!lodash.isEmpty(edits)) {
-        $scope.edits = lodash.assign({}, edits);
-        console.log('Saved Edits ', $scope.edits);
-        if($scope.edits.backgroundColor && $scope.edits.backgroundColor.color) {
-          $scope.color = $scope.edits.backgroundColor.color;
-        }
+var EditCtrl = function($scope, $cookies, ContentScriptFactory, lodash) {
+  var _this = this;
+  _this.toggleTextReplace = false;
+  _this.toggleColorPicker = false;
+  _this.showTab = 'Edit';
+  _this.color = '#000';
+  _this.edits = null;
+  _this.showEdit = '';
+  _this.ContentScriptFactory = ContentScriptFactory;
+  _this.cookies = $cookies;
+  _this.lodash = lodash;
+  _this.filters = {};
+
+  ContentScriptFactory.getCurrentURLEdits().then(function(edits) {
+    if (!lodash.isEmpty(edits)) {
+      _this.edits = lodash.assign({}, edits);
+      console.log('Saved Edits ', _this.edits);
+      if (_this.edits.backgroundColor && _this.edits.backgroundColor.color) {
+        _this.color = _this.edits.backgroundColor.color;
+      }
+    }
+  });
+
+  $scope.triggerEditElementAction = function() {
+    _this.triggerEditElementAction();
+  };
+
+  $scope.getAllEdits = _this.getAllEdits();
+
+  $scope.changeBackgroundColor = function() {
+    _this.changeBackgroundColor();
+  };
+
+  $scope.textReplace = function() {
+    _this.textReplace();
+  };
+};
+
+EditCtrl.prototype.triggerEditElementAction = function() {
+  this.ContentScriptFactory.triggerEditAction()
+    .then(function(editedElement) {
+      console.log('edit', editedElement);
+    });
+};
+
+EditCtrl.prototype.getAllEdits = function() {
+  this.ContentScriptFactory.getAllEdits()
+    .then(function(edits) {
+      console.log('all edits', edits);
+      return edits;
+    });
+};
+
+EditCtrl.prototype.changeBackgroundColor = function() {
+  var _this = this;
+  const colorObj = {
+    command: 'changeColor',
+    color: this.color
+  };
+  chrome.tabs.getSelected(null, function(tab) {
+    chrome.tabs.sendMessage(tab.id, colorObj, function(res) {
+      if (res && res.color) {
+      _this.ContentScriptFactory.saveBackgroundColorEdit(tab.url, res)
+      .then(function(isSaved) {
+          console.log(isSaved);
+        });
       }
     });
+  });
+};
 
-    $scope.triggerEditElementAction = function() {
-        ContentScriptFactory.triggerEditAction().then(function(editedElement) {
-            console.log('edit', editedElement);
-        });
+EditCtrl.prototype.textReplace = function() {
+  if (this.txtReplace && this.txtReplace.length > 0) {
+    var _this = this;
+    this.cookies.putObject('find', this.txtFind);
+    this.cookies.putObject('replace', this.txtReplace);
+    const txtRplObj = {
+      find: this.txtFind,
+      replace: this.txtReplace
     };
-
-
-
-    $scope.txtFind = $cookies.get('find');
-    $scope.txtReplace = $cookies.get('replace');
-
-    $scope.filters = {};
-
-    $scope.changeBackgroundColor = function() {
-      const colorObj = { command: 'changeColor', color: $scope.color };
-      chrome.tabs.getSelected(null, function(tab) {
-        chrome.tabs.sendMessage(tab.id, colorObj, function(res) {
-          if(res && res.color) {
-            ContentScriptFactory.saveBackgroundColorEdit(tab.url, res).then(function(isSaved) {
-              console.log(isSaved);
-            });
-          }
-        });
-      });
-    };
-
-    $scope.textReplace = function() {
-        if ($scope.txtReplace && $scope.txtReplace.length > 0) {
-            $cookies.putObject('find', $scope.txtFind);
-            $cookies.putObject('replace', $scope.txtReplace);
-            const txtRplObj = {
-                find: $scope.txtFind,
-                replace: $scope.txtReplace
-            };
-            chrome.tabs.getSelected(null, function(tab) {
-                const url = tab.url;
-                chrome.tabs.sendMessage(tab.id, txtRplObj, function(res) {
-                    if (typeof res != 'undefined') {
-                      ContentScriptFactory.textReplaceAction(url, res).then(function(isSaved) {
-                        console.log(isSaved);
-                      });
-                    }
-                });
-            });
+    chrome.tabs.getSelected(null, function(tab) {
+      const url = tab.url;
+      chrome.tabs.sendMessage(tab.id, txtRplObj, function(res) {
+        if (typeof res != 'undefined') {
+          _this.ContentScriptFactory.textReplaceAction(url, res)
+          .then(function(isSaved) {
+            console.log(isSaved);
+          });
         }
-    };
-
-    //Handle Errors
-    $scope.$on('error', function(event, data) {
-        $scope.errMessage = data;
+      });
     });
-});
+  }
+};
+
+EditCtrl.$inject = ['$scope', '$cookies', 'ContentScriptFactory', 'lodash'];
+
+app.controller('EditController', EditCtrl);
+
 app.directive('rainbowTextDir', function($compile) {
   return {
     restrict: 'EA',
@@ -86,36 +116,24 @@ app.directive('rainbowTextDir', function($compile) {
   };
 });
 
-app.directive('editButtonDirective', function($compile) {
-    return {
-        restrict: 'A',
-        scope: true,
-        link: function(scope, element) {
-            const template = "<button ng-click='triggerEditElementAction()' id='edit-button' class='button-small pure-button'>+ Edit</button>";
-            const linkFn = $compile(template);
-            const content = linkFn(scope);
-            element.append(content);
-        }
-    };
-});
 
 app.directive('sel', function() {
-    return {
-        template: '<select ng-model="selectedValue" ng-options="f.mode for f in filters.colorblind"></select>',
-        restrict: 'E',
-        scope: {
-            selectedValue: '='
-        },
-        link: function(scope, elem) {
-            scope.filters.colorblind = [{
-                mode: 'Protonopia',
-                selected: false
-            }, {
-                mode: 'Deuteranopia',
-                selected: false
-            }];
+  return {
+    template: '<select ng-model="selectedValue" ng-options="f.mode for f in filters.colorblind"></select>',
+    restrict: 'E',
+    scope: {
+      selectedValue: '='
+    },
+    link: function(scope, elem) {
+      scope.filters.colorblind = [{
+        mode: 'Protonopia',
+        selected: false
+      }, {
+        mode: 'Deuteranopia',
+        selected: false
+      }];
 
-            scope.selectedValue = scope.filters.colorblind[1];
-        }
-    };
+      scope.selectedValue = scope.filters.colorblind[1];
+    }
+  };
 });

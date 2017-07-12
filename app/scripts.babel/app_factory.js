@@ -20,19 +20,16 @@ app.factory('ContentScriptFactory', function($q, lodash) {
     let deferred = $q.defer();
     chrome.storage.sync.get(url, function(pageEdits) {
       console.log(pageEdits[url]);
-      if (pageEdits[url].textReplaceEdits.length >= 1) {
-        let obj = {
-          textEdits
-        };
+      if (pageEdits[url] && pageEdits[url] != 'undefined') {
         pageEdits[url].textReplaceEdits.push(textEdits);
         console.log(pageEdits[url].textReplaceEdits);
         chrome.storage.sync.set(pageEdits, function() {
           deferred.resolve(true);
         });
       } else {
-        pageEdits[url].textReplaceEdits = [textEdits];
-
-        chrome.storage.sync.set(pageEdits, function() {
+        let obj = {};
+        obj[url] = { 'textReplaceEdits': [textEdits] };
+        chrome.storage.sync.set(obj, function() {
           deferred.resolve(true);
         });
       }
@@ -82,10 +79,23 @@ app.factory('ContentScriptFactory', function($q, lodash) {
     return deferred.promise;
   };
 
+  let getAllEdits = function() {
+    let deferred = $q.defer();
+    chrome.storage.sync.get(null, function(edits) {
+      if (!edits) {
+        deferred.resolve("No Edits Have Been Made");
+      }
+
+      deferred.resolve(edits);
+    });
+    return deferred.promise;
+  };
+
   return {
     triggerEditAction: triggerEditAction,
     textReplaceAction: textReplaceAction,
     saveBackgroundColorEdit: saveBackgroundColorEdit,
-    getCurrentURLEdits: getCurrentURLEdits
+    getCurrentURLEdits: getCurrentURLEdits,
+    getAllEdits: getAllEdits
   };
 });
