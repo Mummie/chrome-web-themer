@@ -6,6 +6,21 @@ const originalPageStyles = {
   cursor: document.body.style.cursor
 };
 
+function walk(elm) {
+    let node;
+
+    let styles = [];
+    const style = window.getComputedStyle(elm);
+    styles.push(style);
+    console.log(styles);
+    // Handle child elements
+    for (node = elm.firstChild; node; node = node.nextSibling) {
+        if (node.nodeType === 1) { // 1 == Element
+            walk(node);
+        }
+    }
+}
+
 const cssPath = chrome.extension.getURL('styles/inject.css');
 const injectCSS = document.createElement('link');
 injectCSS.setAttribute('rel', 'stylesheet');
@@ -14,26 +29,102 @@ injectCSS.setAttribute('href', cssPath);
 
 document.querySelector('head').append(injectCSS);
 
-var app = angular.module('ChromeThemer', []);
+const app = angular.module('ChromeThemer', []);
 
-var html = document.querySelector('html');
+const html = document.querySelector('html');
 html.setAttribute('ng-csp', '');
 
-var body = document.querySelector('body');
+const body = document.querySelector('body');
 body.setAttribute('ng-controller', 'MainController');
+class ContentScriptCtrl {
+  constructor($scope) {
+    const _this = this;
+    _this.isEditMode = false;
 
-app.controller('MainController', function($scope) {
-  $scope.isEditMode = false;
-  body.setAttribute('ng-model', $scope.isEditMode);
+    body.setAttribute('ng-model', _this.isEditMode);
 
-  if ($scope.isEditMode) {
-    body.setAttribute('ng-keydown', 'onKeyUp()');
-    body.setAttribute('ng-mouseover', 'showHoverStyle()');
-    body.setAttribute('ng-mouseleave', 'removeHoverStyle()');
-    body.setAttribute('ng-click', 'triggerEditAction()');
+    if (_this.isEditMode) {
+      body.setAttribute('ng-keydown', 'onKeyUp()');
+      body.setAttribute('ng-mouseover', 'showHoverStyle()');
+      body.setAttribute('ng-mouseleave', 'removeHoverStyle()');
+      body.setAttribute('ng-click', 'triggerEditAction()');
+    }
+
+    $scope.getDomPath = el => {
+      _this.getDomPath(el);
+    };
+
+    $scope.findAndReplaceText = (textToFind, textToReplace) => {
+      _this.findAndReplaceText(textToFind, textToReplace);
+    };
+
+    $scope.makeCursor = color => {
+      _this.makeCursor(color);
+    };
+
+    $scope.walk = el => {
+      _this.walk(el);
+    };
+
+    $scope.onKeyUp = e => {
+      _this.onKeyUp(e);
+    };
+
+    $scope.showHoverStyle = e => {
+      _this.showHoverStyle(e);
+    };
+
+    $scope.triggerEditAction = e => {
+      _this.triggerEditAction(e);
+    };
+
+    $scope.removeHoverStyle = e => {
+      _this.removeHoverStyle(e);
+    };
+
+    // check if there are any saved edits for the current URL
+    // edits will be an array of css styles, changes to text and DOM elements
+    chrome.storage.sync.get(window.location.href, function(edits) {
+      if (Object.keys(edits).length >= 1) {
+        let e = edits[window.location.href];
+        if (e.backgroundColor) {
+          document.body.style.backgroundColor = e.backgroundColor.color;
+        }
+
+        // if there are saved text edits, loop through them and call replace func
+        if (e.textReplaceEdits) {
+          for (let i = 0, textEditsLen = e.textReplaceEdits.length; i < textEditsLen; i++) {
+            $scope.findAndReplaceText(e.textReplaceEdits[i].originalText, e.textReplaceEdits[i].replaceText);
+          }
+        }
+      }
+    });
+
+    chrome.extension.onMessage.addListener((req, sender, res) => {
+      if (req.find && req.replace) {
+        const textEdits = $scope.findAndReplaceText(req.find, req.replace);
+        if (textEdits.originalText != '' && textEdits.replaceText != '') {
+          res(textEdits);
+        }
+      }
+
+      if (req.command === 'editEvent') {
+        $scope.isEditMode = true;
+        $scope.makeCursor('gray');
+      }
+
+      if (req.command === 'changeColor' && req.color) {
+        document.body.style.backgroundColor = req.color;
+        res({
+          element: 'body',
+          color: `${req.color}`
+        });
+      }
+    });
+
   }
 
-  $scope.getDomPath = function(el) {
+  getDomPath(el) {
     const stack = [];
     while (el.parentNode != null) {
       let sibCount = 0;
@@ -59,21 +150,20 @@ app.controller('MainController', function($scope) {
     }
 
     return stack.slice(1).join(' > '); // removes the html element
-  };
+  }
 
-  $scope.findAndReplaceText = function(textToFind, textToReplace) {
-
+  findAndReplaceText(textToFind, textToReplace) {
     let textreplaceEdits = {
       originalText: textToFind,
       replaceText: textToReplace
     };
-    document.body.innerHTML = document.body.innerHTML.split(textToFind).join(textToReplace);
+    document.body.innerHTML =
+    document.body.innerHTML.split(textToFind).join(textToReplace);
 
     return textreplaceEdits;
-  };
+  }
 
-
-  $scope.makeCursor = function(color) {
+  makeCursor(color) {
     const cursor = document.createElement('canvas');
     cursor.id = 'chrome-edit-cursor';
     const ctx = cursor.getContext('2d');
@@ -94,28 +184,24 @@ app.controller('MainController', function($scope) {
     ctx.stroke();
 
     document.body.style.cursor = `url(${cursor.toDataURL()}), auto`;
-  };
+  }
 
-
-  $scope.onKeyUp = function(e) {
+  onKeyUp(e) {
     if (e.keyCode === 27) {
-      console.log('esc pressed');
-      $scope.isEditMode = false;
-      //remove edit event handlers
+      this.isEditMode = false;
     }
-  };
+  }
 
-
-  $scope.showHoverStyle = function(e) {
+  showHoverStyle(e) {
     if (typeof e.target != 'undefined') {
       console.log('hovering over', e.target);
       if (!e.target.classList.contains('chrome-web-themer-overlay')) {
         e.target.className += ' chrome-web-themer-overlay';
       }
     }
-  };
+  }
 
-  $scope.triggerEditAction = function(e) {
+  triggerEditAction(e) {
     if (e.default) {
       return;
     }
@@ -125,7 +211,7 @@ app.controller('MainController', function($scope) {
     e = e || window.event;
     const target = e.target || e.srcElement;
     const text = target.textContent || text.innerText;
-    const path = $scope.getDomPath(target);
+    const path = this.getDomPath(target);
     const currentCSS = window.getComputedStyle(target);
     console.log(`DOM Path ${path}`);
     if (target instanceof Element && path != 'undefined' || '') {
@@ -140,59 +226,23 @@ app.controller('MainController', function($scope) {
       console.log(clickedElement);
       return clickedElement;
     }
-  };
+  }
 
-  $scope.removeHoverStyle = function(e) {
-    e.target.className = e.target.className.replace(new RegExp('(/:^|\\s)' + 'chrome-web-themer-overlay' + '(?:\\s|$)'), '');
+  removeHoverStyle(e) {
+    e.target.className = e.target.className.replace(
+      new RegExp('(/:^|\\s)' + 'chrome-web-themer-overlay' + '(?:\\s|$)'), ''
+    );
     document.body.style.cursor = originalPageStyles.cursor;
     angular.element('#chrome-edit-cursor').remove();
-  };
+  }
+}
 
-  // check if there are any saved edits for the current URL
-  chrome.storage.sync.get(window.location.href, function(edits) {
-    if (Object.keys(edits).length >= 1) {
-      // edits will be an array of css styles, changes to text and DOM elements
-      let e = edits[window.location.href];
-      if (e.backgroundColor) {
-        document.body.style.backgroundColor = e.backgroundColor.color;
-      }
+ContentScriptCtrl.$inject = ['$scope'];
+app.controller('MainController', ContentScriptCtrl);
 
-      if (e.textReplaceEdits) {
-        for (let i = 0, textEditsLen = e.textReplaceEdits.length; i < textEditsLen; i++) {
-          $scope.findAndReplaceText(e.textReplaceEdits[i].originalText, e.textReplaceEdits[i].replaceText);
-        }
-      }
-    }
-  });
+app.directive('editPopupMenu', $compile => {
 
-  chrome.extension.onMessage.addListener((req, sender, res) => {
-    console.log(req);
-    if (req.find && req.replace) {
-      const textEdits = $scope.findAndReplaceText(req.find, req.replace);
-      if (textEdits.originalText != '' && textEdits.replaceText != '') {
-        res(textEdits);
-      }
-    }
-
-    if (req.command === 'editEvent') {
-      $scope.isEditMode = true;
-      $scope.makeCursor('gray');
-    }
-
-    if (req.command === 'changeColor' && req.color) {
-      document.body.style.backgroundColor = req.color;
-      res({
-        element: 'body',
-        color: `${req.color}`
-      });
-    }
-  });
-
-});
-
-app.directive('editPopupMenu', function($compile) {
-
-  var template = `
+  const template = `
     <div id='edit-popup-menu'>
       <button class='close' value='close'>close</button>
       <ul>
@@ -202,37 +252,11 @@ app.directive('editPopupMenu', function($compile) {
     </div>`;
 
   return {
-    link: function(scope, element) {
-      scope.$apply(function() {
-        var content = $compile(template)(scope);
+    link(scope, element) {
+      scope.$apply(() => {
+        const content = $compile(template)(scope);
         element.append(content);
       });
-    }
-  };
-});
-
-app.directive('clickOff', function($parse, $document) {
-  var dir = {
-    compile: function($element, attr) {
-      // Parse the expression to be executed
-      // whenever someone clicks _off_ this element.
-      var fn = $parse(attr["clickOff"]);
-      return function(scope, element, attr) {
-        // add a click handler to the element that
-        // stops the event propagation.
-        element.bind("click", function(event) {
-          console.log("stopProp");
-          event.stopPropagation();
-        });
-        angular.element($document[0].body).bind("click", function(event) {
-          console.log("cancel.");
-          scope.$apply(function() {
-            fn(scope, {
-              $event: event
-            });
-          });
-        });
-      };
     }
   };
 });
