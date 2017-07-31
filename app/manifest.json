@@ -20,7 +20,7 @@
         "js": ["bower_components/angular/angular.min.js", "scripts/contentscript.js"],
         "css": ["bower_components/angular/angular-csp.css", "styles/inject.css"]
     }],
-    "web_accessible_resources": ["bower_components/angular/*", "scripts/contentscript.js", "styles/inject.css"],
+    "web_accessible_resources": ["bower_components/angular/*", "bower_components/angular-bootstrap-colorpicker/js/bootstrap-colorpicker-module.min.js", "bower_components/angular-bootstrap-contextmenu/contextMenu.js", "scripts/contentscript.js", "styles/inject.css"],
     "permissions": [
         "tabs",
         "background",

@@ -9,6 +9,15 @@
     height: 200px;
 }
 
+.fade-out {
+  box-shadow: 0 0 0 100vmax rgba(0,0,0, 0);
+  transition: 1s box-shadow
+}
+
+.edit-element:focus {
+  box-shadow: 0 0 0 100vmax rgba(0,0,0, .7);
+}
+
 #edit-popup-menu {
     z-index:2;
     position:absolute;

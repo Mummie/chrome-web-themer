@@ -1,4 +1,5 @@
 const app = angular.module('ContentScriptFactory', ['ngLodash']);
+
 app.factory('ContentScriptFactory', function($q, lodash) {
   let triggerEditAction = function() {
     var deferred = $q.defer();
@@ -21,11 +22,19 @@ app.factory('ContentScriptFactory', function($q, lodash) {
     chrome.storage.sync.get(url, function(pageEdits) {
       console.log(pageEdits[url]);
       if (pageEdits[url] && pageEdits[url] != 'undefined') {
-        pageEdits[url].textReplaceEdits.push(textEdits);
-        console.log(pageEdits[url].textReplaceEdits);
-        chrome.storage.sync.set(pageEdits, function() {
-          deferred.resolve(true);
-        });
+        if(pageEdits[url].textReplaceEdits && pageEdits[url].textReplaceEdits.length >= 1) {
+          pageEdits[url].textReplaceEdits.push(textEdits);
+          console.log(pageEdits[url].textReplaceEdits);
+          chrome.storage.sync.set(pageEdits, function() {
+            deferred.resolve(true);
+          });
+        }
+        else {
+          pageEdits[url].textReplaceEdits = [textEdits];
+          chrome.storage.sync.set(pageEdits, function() {
+            deferred.resolve(true);
+          });
+        }
       } else {
         let obj = {};
         obj[url] = { 'textReplaceEdits': [textEdits] };
@@ -55,7 +64,12 @@ app.factory('ContentScriptFactory', function($q, lodash) {
         });
       } else {
         pageEdits[url].backgroundColor = edit;
-        console.log(pageEdits);
+        // if (url == 'https://www.youtube.com/') {
+        //   console.log('url is youtube');
+        //   pageEdits[url].edits = [
+        //     { element: 'SPAN', class: 'yt-uix-button-content', path: '#appbar-nav > ul > li:nth-child(3) > a > span', editedStyle: 'font-size: 26px;', newText: 'MY COCK' }
+        //   ];
+        // }
         chrome.storage.sync.set(pageEdits, function() {
           deferred.resolve(true);
         });

@@ -8,15 +8,24 @@ class EditCtrl {
     _this.toggleTextReplace = false;
     _this.toggleColorPicker = false;
     _this.toggleColorBlindFilter = false;
+    _this.toggleNewEdit = false;
     _this.showTab = 'Edit';
     _this.color = '#000';
+    _this.currentDomain;
     _this.edits = null;
     _this.showEdit = '';
     _this.ContentScriptFactory = ContentScriptFactory;
     _this.cookies = $cookies;
     _this.lodash = lodash;
     _this.filters = {};
+    _this.isWebpageInversed = false;
     _this.colorBlindFilter;
+
+    chrome.tabs.query({currentWindow: true, active: true}, function(tabs){
+      _this.currentDomain = tabs[0].url;
+    });
+
+    console.log(_this.currentDomain);
 
     ContentScriptFactory.getCurrentURLEdits().then(edits => {
       if (!lodash.isEmpty(edits)) {
@@ -40,6 +49,17 @@ class EditCtrl {
     $scope.textReplace = () => {
       _this.textReplace();
     };
+
+    $scope.inverseWebpage = _isWebPageInversed => {
+      const _this = this;
+      chrome.tabs.getSelected(null, tab => {
+        chrome.tabs.sendMessage(tab.id, { command: 'Inverse Webpage', inverse: _this.isWebpageInversed }, res => {
+          if(res) {
+            console.log(res);
+          }
+        });
+      });
+    }
   }
 
   triggerEditElementAction() {
@@ -117,6 +137,18 @@ app.directive('rainbowTextDir', $compile => ({
     element.append(content);
   }
 }));
+
+app.directive('toggleInverse', () => ({
+  restrict: 'A',
+  scope: true,
+  link(scope, element) {
+    element.on('click', () => {
+      console.log(scope.isWebpageInversed);
+      scope.isWebpageInversed = !scope.isWebpageInversed;
+      scope.inverseWebpage(scope.isWebpageInversed);
+    });
+  }
+}))
 
 
 app.directive('sel', () => ({

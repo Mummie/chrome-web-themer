@@ -33,22 +33,27 @@ const app = angular.module('ChromeThemer', []);
 
 const html = document.querySelector('html');
 html.setAttribute('ng-csp', '');
-
 const body = document.querySelector('body');
+
+let texts = document.querySelectorAll('p', 'span');
+for(let i = 0, tLen = texts.length; i < tLen; i++) {
+  texts[i].style.fontFamily = 'cursive';
+}
+
+let textDivs = document.querySelectorAll('div');
+for(let i = 0, tDLen = textDivs.length; i < tDLen; i++) {
+  textDivs[i].style.fontFamily = 'monospace';
+}
+
 body.setAttribute('ng-controller', 'MainController');
+
 class ContentScriptCtrl {
-  constructor($scope) {
+  constructor($scope, $compile) {
     const _this = this;
     _this.isEditMode = false;
+    _this.body = body;
 
     body.setAttribute('ng-model', _this.isEditMode);
-
-    if (_this.isEditMode) {
-      body.setAttribute('ng-keydown', 'onKeyUp()');
-      body.setAttribute('ng-mouseover', 'showHoverStyle()');
-      body.setAttribute('ng-mouseleave', 'removeHoverStyle()');
-      body.setAttribute('ng-click', 'triggerEditAction()');
-    }
 
     $scope.getDomPath = el => {
       _this.getDomPath(el);
@@ -97,20 +102,48 @@ class ContentScriptCtrl {
             $scope.findAndReplaceText(e.textReplaceEdits[i].originalText, e.textReplaceEdits[i].replaceText);
           }
         }
+
+        if (e.edits) {
+          e.edits.forEach(edit => {
+            const e = document.querySelector(edit.path);
+            e.style = edit.editedStyle;
+            if(edit.newText) {
+              e.innerHTML = edit.newText;
+            }
+          });
+        }
       }
     });
 
     chrome.extension.onMessage.addListener((req, sender, res) => {
       if (req.find && req.replace) {
-        const textEdits = $scope.findAndReplaceText(req.find, req.replace);
+        $scope.findAndReplaceText(req.find, req.replace);
+        const textEdits = { originalText: req.find, replaceText: req.replace };
         if (textEdits.originalText != '' && textEdits.replaceText != '') {
           res(textEdits);
         }
       }
 
+      if (req.inverse) {
+        this.body.className = " inversed";
+        this.html.className = " inversed";
+        if(this.html.className.includes('inversed')) {
+          res(true);
+        }
+      }
+
       if (req.command === 'editEvent') {
         $scope.isEditMode = true;
+        this.body.setAttribute('ng-keydown', 'onKeyUp()');
+        this.body.setAttribute('ng-mouseover', 'showHoverStyle(e)');
+        this.body.setAttribute('ng-mouseleave', 'removeHoverStyle()');
         $scope.makeCursor('gray');
+        document.body.addEventListener('click', e => {
+          console.log(e);
+          const clickedElement = $scope.triggerEditAction(e);
+          res(clickedElement);
+        });
+
       }
 
       if (req.command === 'changeColor' && req.color) {
@@ -153,7 +186,7 @@ class ContentScriptCtrl {
   }
 
   findAndReplaceText(textToFind, textToReplace) {
-    let textreplaceEdits = {
+    const textreplaceEdits = {
       originalText: textToFind,
       replaceText: textToReplace
     };
@@ -202,14 +235,11 @@ class ContentScriptCtrl {
   }
 
   triggerEditAction(e) {
-    if (e.default) {
-      return;
-    }
     e.stopImmediatePropagation();
     e.preventDefault();
 
-    e = e || window.event;
-    const target = e.target || e.srcElement;
+    const target = e.target;
+    console.log('target', target);
     const text = target.textContent || text.innerText;
     const path = this.getDomPath(target);
     const currentCSS = window.getComputedStyle(target);
@@ -237,9 +267,22 @@ class ContentScriptCtrl {
   }
 }
 
-ContentScriptCtrl.$inject = ['$scope'];
+ContentScriptCtrl.$inject = ['$scope', '$compile'];
 app.controller('MainController', ContentScriptCtrl);
 
+function editElementDir() {
+  return {
+        restrict: 'AE',
+        scope: true,
+        link: function (scope, element, attrs) {
+           element.on('click', e => {
+             scope.triggerEditAction(e);
+           });
+        }
+    };
+}
+
+app.directive('editElementDir', editElementDir);
 app.directive('editPopupMenu', $compile => {
 
   const template = `

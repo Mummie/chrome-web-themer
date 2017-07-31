@@ -27,17 +27,6 @@ chrome.tabs.query({ 'active': true, 'currentWindow': true }, function(tabs) {
 
 });
 
-chrome.runtime.onConnect.addListener(function(port, sender, res) {
-  console.assert(port.name === "editHandler");
-
-  port.onMessage.addListener(function(msg) {
-    if (msg.editElement && msg.editElement.element.length > 0) {
-      // do stuff for validating and saving edited element to current tab url page
-      console.log(msg.editElement);
-    }
-  });
-});
-
 chrome.extension.onMessage.addListener(function(request, sender, sendResponse) {
       switch (request.command) {
         case "GetURL":

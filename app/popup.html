@@ -100,6 +100,10 @@
               </button>
             </div>
           </div>
+          <a class="show-filter" ng-click="ctrl.toggleNewEdit = !ctrl.toggleNewEdit" href="#">Add New Edit</a>
+          <div class="pure-control-group row" ng-if="ctrl.toggleNewEdit">
+            <input type="checkbox" ng-checked="saveEditToDomain">Save Edit to Domain {{currentDomain}}</input>
+          </div>
           <a
             class="show-filter"
             ng-click="ctrl.toggleTextReplace = !ctrl.toggleTextReplace"
@@ -134,15 +138,26 @@
         </div>
         <div class="row" ng-show="ctrl.showTab == 'Filters'" ng-cloak>
           <div class="card">
-            <a
-              class="show-filter"
-              href="#"
-              ng-click="ctrl.toggleColorBlindFilter = !ctrl.toggleColorBlindFilter">
-              Colorblind
-            </a>
-            <div class="pure-control-group" ng-if="ctrl.toggleColorBlindFilter">
-              <div sel></div>
-            </div>
+            <ul class="tg-list">
+              <li class="tg-list-item">
+                <a
+                  class="show-filter"
+                  href="#"
+                  ng-click="ctrl.toggleColorBlindFilter = !ctrl.toggleColorBlindFilter">
+                  Colorblind
+                </a>
+                <div class="pure-control-group" ng-if="ctrl.toggleColorBlindFilter">
+                  <div sel></div>
+                </div>
+              </li>
+              <li class="tg-list-item">
+                <a
+                  class="show-filter"
+                  href="#"
+                  ng-click="ctrl.inverseWebpage(ctrl.isWebpageInversed)">
+                  Inverse Webpage </a>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
