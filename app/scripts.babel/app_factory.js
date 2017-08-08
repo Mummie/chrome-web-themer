@@ -1,26 +1,17 @@
-const app = angular.module('ContentScriptFactory', []);
-app.factory('ContentScriptFactory', function($q, $timeout) {
+const app = angular.module('ContentScriptFactory', ['ngLodash']);
+
+app.factory('ContentScriptFactory', function($q, lodash) {
   let triggerEditAction = function() {
     var deferred = $q.defer();
 
-    $timeout(function() {
-      deferred.reject('timeout for selecting an element to edit');
-    }, 10000);
-
-    chrome.tabs.query({
-      'active': true
-    }, function(tabs) {
-      if (tabs.length > 0) {
-        chrome.tabs.sendRequest(tabs[0].id, {
-          command: 'editEvent'
-        }, function(clickedElement) {
-          if (chrome.runtime.lastError) {
-            deferred.reject(chrome.runtime.lastError);
-          } else {
-            deferred.resolve(clickedElement);
-          }
-        });
-      }
+    chrome.tabs.getSelected(null, function(tab) {
+      chrome.tabs.sendMessage(tab.id, { command: 'editEvent' },
+      function(clickedElement) {
+        if (chrome.runtime.lastError) {
+          deferred.reject(chrome.runtime.lastError);
+        }
+        deferred.resolve(clickedElement);
+      });
     });
 
     return deferred.promise;
@@ -29,19 +20,24 @@ app.factory('ContentScriptFactory', function($q, $timeout) {
   let textReplaceAction = function(url, textEdits) {
     let deferred = $q.defer();
     chrome.storage.sync.get(url, function(pageEdits) {
-      if (pageEdits.length > 1 && pageEdits.textReplaceEdits.length > 1) {
-        let obj = {
-          textEdits
-        };
-        pageEdits.textReplaceEdits.push(obj);
-        console.log(pageEdits.textReplaceEdits);
-        chrome.storage.sync.set(pageEdits.textReplaceEdits, function() {
-          deferred.resolve(true);
-        });
+      console.log(pageEdits[url]);
+      if (pageEdits[url] && pageEdits[url] != 'undefined') {
+        if(pageEdits[url].textReplaceEdits && pageEdits[url].textReplaceEdits.length >= 1) {
+          pageEdits[url].textReplaceEdits.push(textEdits);
+          console.log(pageEdits[url].textReplaceEdits);
+          chrome.storage.sync.set(pageEdits, function() {
+            deferred.resolve(true);
+          });
+        }
+        else {
+          pageEdits[url].textReplaceEdits = [textEdits];
+          chrome.storage.sync.set(pageEdits, function() {
+            deferred.resolve(true);
+          });
+        }
       } else {
         let obj = {};
-        obj[url]['textReplaceEdits'] = [textEdits];
-
+        obj[url] = { 'textReplaceEdits': [textEdits] };
         chrome.storage.sync.set(obj, function() {
           deferred.resolve(true);
         });
@@ -52,24 +48,93 @@ app.factory('ContentScriptFactory', function($q, $timeout) {
     return deferred.promise;
   };
 
-  let saveBackgroundColorEdit = function(url, edit) {
+  let saveEditToURL = function(url, edit) {
     let deferred = $q.defer();
+    if (edit === 'undefined' || null) {
+      deferred.reject(false);
+    }
+
     chrome.storage.sync.get(url, function(pageEdits) {
-      console.log('page edit l from factory ', pageEdits);
-      let obj = {};
-      obj[url].backgroundColor = edit;
-      console.log(obj[url].backgroundColor);
-        chrome.storage.sync.set(obj[url].backgroundColor, function() {
-          deferred.resolve(true);
-        });
+        for(let key in Object.keys(edit)) {
+          if(lodash.isEmpty(pageEdits[url])) {
+            let obj = {};
+            obj[url][key] = edit[key];
+            console.log(obj[url][key]);
+            chrome.storage.sync.set(obj, function() {
+              deferred.resolve(true);
+            });
+          }
+          else {
+            pageEdits[url][key] = edit[key];
+            console.log(pageEdits[url][key]);
+            chrome.storage.sync.set(pageEdits, function() {
+              deferred.resolve(true);
+            });
+          }
+        }
+
     });
 
+    return deferred.promise;
+  }
+
+  let saveBackgroundColorEdit = function(url, edit) {
+    let deferred = $q.defer();
+    if (edit === 'undefined' || null) {
+      deferred.reject(false);
+    }
+
+    chrome.storage.sync.get(url, function(pageEdits) {
+      console.log(pageEdits[url]);
+      if(lodash.isEmpty(pageEdits[url])) {
+        let obj = {};
+        obj[url] = { 'backgroundColor': edit };
+        chrome.storage.sync.set(obj, function() {
+          deferred.resolve(true);
+        });
+      } else {
+        pageEdits[url].backgroundColor = edit;
+        chrome.storage.sync.set(pageEdits, function() {
+          deferred.resolve(true);
+        });
+      }
+
+    });
+
+    return deferred.promise;
+  };
+
+  let getCurrentURLEdits = function() {
+    let deferred = $q.defer();
+    chrome.tabs.query({
+      currentWindow: true,
+      active: true
+    }, function(tabs) {
+      chrome.storage.sync.get(tabs[0].url, function(edits) {
+        deferred.resolve(edits[tabs[0].url]);
+      });
+    });
+    return deferred.promise;
+  };
+
+  let getAllEdits = function() {
+    let deferred = $q.defer();
+    chrome.storage.sync.get(null, function(edits) {
+      if (!edits) {
+        deferred.resolve("No Edits Have Been Made");
+      }
+
+      deferred.resolve(edits);
+    });
     return deferred.promise;
   };
 
   return {
     triggerEditAction: triggerEditAction,
     textReplaceAction: textReplaceAction,
-    saveBackgroundColorEdit: saveBackgroundColorEdit
+    saveBackgroundColorEdit: saveBackgroundColorEdit,
+    saveEditToURL: saveEditToURL,
+    getCurrentURLEdits: getCurrentURLEdits,
+    getAllEdits: getAllEdits
   };
 });

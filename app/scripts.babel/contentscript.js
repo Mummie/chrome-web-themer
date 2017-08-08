@@ -2,54 +2,112 @@
 /* eslint-disable no-console */
 console.log('hello from content script!');
 
-const cssPath = chrome.extension.getURL('styles/inject.css');
-const injectCSS = document.createElement('link');
-injectCSS.setAttribute('rel', 'stylesheet');
-injectCSS.setAttribute('type', 'text/css');
-injectCSS.setAttribute('href', cssPath);
-
-document.querySelector('head').append(injectCSS);
-
-const injectJQuery = () => {
-  const path = chrome.extension.getURL('scripts/jquery.min.js');
-  const injectDomTraverse = document.createElement('script');
-  injectDomTraverse.setAttribute('type', 'text/javascript');
-  injectDomTraverse.setAttribute('src', path);
-  document.querySelector('head').appendChild(injectDomTraverse);
-};
-
-const port = chrome.runtime.connect({
-  name: 'editHandler'
-});
-if (!window.jQuery) {
-  console.log('injecting jquery');
-  injectJQuery;
+let $ = window.jQuery || jQuery;
+if(!$) {
+  const jQueryPath = chrome.extension.getURL('scripts/jquery.min.js');
+  const injectJQuery = $(`<script src="${jQueryPath}"></script>`);
+  $('head').append(injectJQuery);
+  console.log('check jquery');
 }
 
-let $ = window.jQuery || jQuery;
-
+const cssPath = chrome.extension.getURL('styles/inject.css');
+const injectCSS = $('<link>');
+injectCSS.attr({
+  'rel': 'stylesheet',
+  'type': 'text/css',
+  'href': cssPath
+});
+$('head').append(injectCSS);
+const url = window.location.href;
 const originalPageStyles = {
-  cursor: document.body.style.cursor,
+  cursor: $('body').css('cursor'),
   pageSource: $('body').html()
+};
+var EditElement = {};
+var EditMode = {
+    init: function() {
+        this.bindEventHandlers();
+    },
+    bindEventHandlers: function() {
+        for (var i=0; i<this.eventHandlers.length; i++) {
+            this.bindEvent(this.eventHandlers[i]);
+        }
+    },
+    bindEvent: function(e) {
+        e.$el.on(e.event, e.handler);
+        console.log('Bound ' + e.event + ' handler for', e.$el);
+    },
+    removeEventHandlers: function() {
+      for (var i=0; i<this.eventHandlers.length; i++) {
+          this.removeEvent(this.eventHandlers[i]);
+      }
+    },
+    eventHandlers: [
+        {
+            $el: $(document),
+            event: "keyup",
+            handler: function(e) {
+                if (e.keyCode === 27) {
+                  console.log('esc pressed');
+                  removeEventHandlers();
+                  $.contextMenu('destroy');
+                  $(document.body).off('mousedown');
+                  $(document.body).off('mouseout', showHoverStyle);
+                  removeHoverStyle();
+                }
+              }
+
+        },
+        {
+          $el: $('#edit-popup-menu'),
+          event: 'focusout',
+          handler: function() {
+            $(this).animation({
+              display: 'none'
+            });
+            $(this).remove();
+          }
+        },
+        {
+          $el: $('body>*:not(#edit-popup-menu )'),
+          event: 'click',
+          handler: editClickHandler
+        },
+        {
+            $el: $('#new-element-text'),
+            event: "change",
+            handler: function() {
+                let newText = $(this).text();
+                if(newText.length > 0) {
+                  element.innerText = newText;
+                }
+             }
+        }
+    ]
 };
 
 let editedPageStyles = {};
-chrome.storage.sync.get(window.location.href, function(edits) {
-  if (Object.keys(edits).length >= 1) {
-    // edits will be an array of css styles, changes to text and DOM elements
-    let e = edits[window.location.href];
+chrome.storage.sync.get(url, function(edits) {
+    let e = edits[url];
     console.log(e);
-    if (e.backgroundColor) {
-      $(e.backgroundColor.element).css('background-color', e.backgroundColor.color);
-    }
+    if(e) {
 
-    if (e.textReplaceEdits) {
-      for (let i = 0, textEditsLen = e.textReplaceEdits.length; i < textEditsLen; i++) {
-        findAndReplaceText(e.textReplaceEdits[i].originalText, e.textReplaceEdits[i].replaceText);
+      if (e['backgroundColor']) {
+        $('body').css('background-color', e['backgroundColor'].color);
+      }
+
+      if (e['fontFamily']) {
+        $('body').css('font-family', e['fontFamily'].font);
+      }
+
+      if (e['textReplaceEdits']) {
+        for (let i = 0, textEditsLen = e['textReplaceEdits'].length; i < textEditsLen; i++) {
+          console.log(e['textReplaceEdits'][i].originalText, e['textReplaceEdits'][i].replaceText);
+          findAndReplaceText(e['textReplaceEdits'][i].originalText, e['textReplaceEdits'][i].replaceText);
+        }
       }
     }
-  }
-});
+  });
 
 // map takes a function argument that will be executed to each item in 2nd argument array
 // ex map(x => x * x, [1, 3, 4, 10]) returns [ 1, 9, 16, 100 ]
@@ -57,153 +115,233 @@ const map = (f, [x, ...xs]) => (
   (x === undefined && xs.length === 0) ? [] : [f(x), ...map(f, xs)]
 );
 
-$(document).keyup(function(e) {
-  if (e.keyCode === 27) {
-    console.log('esc pressed');
-    $(document.body).off('mousedown');
-    $(document.body).off('mouseover', showHoverStyle);
-    removeHoverStyle();
-  }
-});
-
-
-function findByTextContent(needle, haystack, precise) {
-  // needle: String, the string to be found within the elements.
-  // haystack: String, a selector to be passed to document.querySelectorAll(),
-  //           NodeList, Array - to be iterated over within the function:
-  // precise: Boolean, true - searches for that precise string, surrounded by
-  //                          word-breaks,
-  //                   false - searches for the string occurring anywhere
-  let elems;
-
-  // no haystack we quit here, to avoid having to search
-  // the entire document:
-  if (!haystack) {
-    return false;
-  }
-  // if haystack is a string, we pass it to document.querySelectorAll(),
-  // and turn the results into an Array:
-  else if ('string' == typeof haystack) {
-    elems = [].slice.call(document.querySelectorAll(haystack), 0);
-  }
-  // if haystack has a length property, we convert it to an Array
-  // (if it's already an array, this is pointless, but not harmful):
-  else if (haystack.length) {
-    elems = [].slice.call(haystack, 0);
-  }
-
-  // work out whether we're looking at innerText (IE), or textContent
-  // (in most other browsers)
-  const textProp = 'textContent' in document ? 'textContent' : 'innerText';
-
-  const // creating a regex depending on whether we want a precise match, or not:
-    reg = precise === true ? new RegExp(`\\b${needle}\\b`) : new RegExp(needle);
-
-  const // iterating over the elems array:
-    found = elems.filter(el => // returning the elements in which the text is, or includes,
-      // the needle to be found:
-      reg.test(el[textProp]));
-
-  return found.length ? found : false;
+const updateElementText = element => {
+  $('#new-element-text').on('change', function() {
+    let newText = $(this).text();
+    if(newText.length > 0) {
+      element.innerText = newText;
+    }
+  });
 }
+
+const getTextNodesIn = function(el, text) {
+    return $(el).find(":not(iframe)").addBack().contents().filter(function() {
+      if(this.nodeType == 3 && this.textContent.indexOf(text) != -1)
+        return this;
+    });
+};
 
 function findAndReplaceText(textToFind, textToReplace) {
-  const pageElementsToSearch = document.querySelectorAll('a, p, span, h1, h2, h3, h4, h5, h6, label');
-  const matchingElements = findByTextContent(textToFind, pageElementsToSearch, true);
-  console.log(matchingElements);
-  let textreplaceEdits = {
-    originalText: textToFind,
-    replaceText: textToReplace
-  };
-  [].forEach.call(matchingElements, e => {
-    console.log('original', e);
+  try {
+    console.log(textToFind + ' ' + textToReplace);
+    let textreplaceEdits = {
+      originalText: textToFind,
+      replaceText: textToReplace
+    };
 
-    e.textContent = e.textContent.replace(textToFind, textToReplace);
-    e.innerText = e.innerText.replace(textToFind, textToReplace);
+    const textNodes = getTextNodesIn(originalPageStyles.pageSource, textToFind);
+    for(let i =0; i < textNodes.length; i++) {
+      console.log($(textNodes[i].parentNode));
+      $(textNodes[i]).text(textToReplace);
+    }
 
-    console.log('changed', e.textContent);
-  });
-  return textreplaceEdits;
+    return textreplaceEdits;
+
+  }
+  catch(e) {
+    console.error('text replace error ' + e);
+  }
 }
 
-port.onMessage.addListener(function(msg) {});
-
 chrome.runtime.onMessage.addListener(function(req, sender, res) {
-  console.log('page edits ', req);
-  if (req.pageEdits && req.pageEdits.length > 0 && Array.isArray(req.pageEdits)) {
-    for (let i = 0, editsLen = req.pageEdits.length; i < editsLen; i++) {
-      if (req.pageEdits[i].backgroundColor) {
-        $(req.pageEdits[i].backgroundColor.element).css('background-color', req.pageEdits[i].backgroundColor.color);
-      }
+  console.log(req.command);
+    switch(req.command) {
+      case "textReplace":
+        const textEdits = findAndReplaceText(req.find, req.replace);
+        if (textEdits.originalText != '' && textEdits.replaceText != '') {
+          res(textEdits);
+        }
+        break;
+      case "changePageFont":
+        $('body').css('font-family', req.font);
+        res(true);
+        break;
+      case 'editEvent':
+        showHoverStyle();
+        makeCursor('gray');
+        EditMode.init();
+        if(EditElement != 'undefined' || null) {
+          res(EditElement);
+        }
+        break;
+      case 'changeColor':
+        $('body').css('background-color', req.color);
+        res({
+          element: 'body',
+          color: `${req.color}`
+        });
+        break;
+
+      case 'Inverse Webpage':
+        console.log(req.inverse);
+        $('html').addClass('inverse-webpage');
+        res(true);
+        break;
     }
-  }
+
 });
 
-chrome.extension.onMessage.addListener((req, sender, res) => {
-  if (req.find && req.replace) {
-    const textEdits = findAndReplaceText(req.find, req.replace);
-    if (textEdits.originalText != '' && textEdits.replaceText != '') {
-      res(textEdits);
-    }
+function editClickHandler(e) {
+  if (e.default) {
+    return false;
   }
-
-  if (req.command === 'editEvent') {
-    showHoverStyle();
-    makeCursor('gray');
-    $(document.body).on('mousedown', e => {
-      if (e.default) {
-        return;
-      }
-      e.stopImmediatePropagation();
-      e.preventDefault();
-
-      // todo: add code that will create a variable that is a valid editable element. add check for this editable element with editableElement.contains(e.target) and use conditional to handle element/err
-      e = e || window.event;
-      const target = e.target || e.srcElement;
-      const text = target.textContent || text.innerText;
-      const path = getDomPath(target);
-      const currentCSS = window.getComputedStyle(target);
-      console.log(`DOM Path ${path}`);
-      injectEditPopupMenu(target);
-      if (target instanceof Element && path != 'undefined' || '') {
-        const clickedElement = {
-          'element': target.tagName.toUpperCase(),
-          text,
-          'id': target.id,
-          'class': target.className,
-          path,
-          'originalCSS': currentCSS
-        };
-        console.log(clickedElement);
-        port.postMessage(clickedElement);
-      }
-    });
+  e.preventDefault();
+  // todo: add code that will create a variable that is a valid editable element. add check for this editable element with editableElement.contains(e.target) and use conditional to handle element/err
+  e = e || window.event;
+  const target = e.target || e.srcElement;
+  const text = e.innerText || '';
+  const path = getDomPath(target);
+  const currentCSS = window.getComputedStyle(target);
+  console.log(`DOM Path ${path}`);
+  injectEditPopupMenu(target);
+  $('#edit-popup-menu').focus();
+  updateElementText(target);
+  if (target instanceof Element && path != 'undefined' || '') {
+    const clickedElement = {
+      'element': target.tagName.toUpperCase(),
+      text,
+      'id': target.id,
+      'class': target.className,
+      path,
+      'originalCSS': currentCSS
+    };
+    console.log(clickedElement);
+    EditElement = clickedElement;
+    return clickedElement;
   }
-
-  if (req.command === 'changeColor' && req.color) {
-    $('body').css('background-color', req.color);
-    res({
-      element: 'body',
-      color: `${req.color}`
-    });
-  }
-});
+}
 
 const injectEditPopupMenu = (elementContainer) => {
   if ($('#edit-popup-menu')) {
     $('edit-popup-menu').remove();
+    console.log('removed');
   }
 
-  const popupMenuHTML = $(`
-    <div id='edit-popup-menu'>
-      <button class='close' value='close'>close</button>
-      <ul>
-        <li>item1</li>
-        <li>item1</li>
-        <li>item1</li>
-      </ul>
-    </div>`);
+  //TODO: reposition menu to prepend on top of element container
+  // Automatically trigger the menu to popup without right clicking
+  $.contextMenu({
+    selector: '.context-menu-one',
+    reposition: true,
+    trigger: 'hover',
+    position: function(opt, x, y){
+        opt.$menu.css({top: 123, left: 123});
+    },
+    callback: function(key, options) {
+      var m = "clicked: " + key;
+      window.console && console.log(m) || alert(m);
+    },
+    items: {
+      "edit": {
+        "name": "Edit",
+        "icon": "edit"
+      },
+      "cut": {
+        "name": "Cut",
+        "icon": "cut"
+      },
+      "sep1": "---------",
+      "quit": {
+        "name": "Quit",
+        "icon": "quit"
+      },
+      "sep2": "---------",
+      "fold1": {
+        "name": "Sub group",
+        "items": {
+          "fold1-key1": {
+            "name": "Foo bar"
+          },
+          "fold2": {
+            "name": "Sub group 2",
+            "items": {
+              "fold2-key1": {
+                "name": "alpha"
+              },
+              "fold2-key2": {
+                "name": "bravo"
+              },
+              "fold2-key3": {
+                "name": "charlie"
+              }
+            }
+          },
+          "fold1-key3": {
+            "name": "delta"
+          }
+        }
+      },
+      "fold1a": {
+        "name": "Other group",
+        "items": {
+          "fold1a-key1": {
+            "name": "echo"
+          },
+          "fold1a-key2": {
+            "name": "foxtrot"
+          },
+          "fold1a-key3": {
+            "name": "golf"
+          }
+        }
+      }
+    }
+  });
+  const contextMenuHTML = $('<span class="context-menu-one btn btn-neutral">Right Click Me</span>');
+
+  const popupMenuHTML = `<nav class="chrome-themer-popup-menu" id="edit-popup-menu " role="navigation">
+	<ul class="nav__list">
+		<li>
+			<input id="group-1" type="checkbox" hidden
+			/>
+			<label for="group-1"><span class="fa fa-angle-right"></span>				First level</label>
+			<ul class="group-list">
+				<li>
+					<input type='text' id='new-element-text'
+					/>
+					<label for='new-element-text'>New Text: </label>
+				</li>
+				<li>
+					<input id="sub-group-1" type="checkbox" hidden
+					/>
+					<label for="sub-group-1"><span class="fa fa-angle-right"></span>						Second level</label>
+					<ul class="sub-group-list">
+						<li><a href="#">2nd level nav item</a>
+						</li>
+						<li><a href="#">2nd level nav item</a>
+						</li>
+						<li><a href="#">2nd level nav item</a>
+						</li>
+						<li>
+							<input id="sub-sub-group-1" type="checkbox"
+							hidden />
+							<label for="sub-sub-group-1"><span class="fa fa-angle-right"></span>								Third level</label>
+							<ul class="sub-sub-group-list">
+								<li><a href="#">3rd level nav item</a>
+								</li>
+								<li><a href="#">3rd level nav item</a>
+								</li>
+								<li><a href="#">3rd level nav item</a>
+								</li>
+							</ul>
+						</li>
+					</ul>
+				</li>
+			</ul>
+	</ul>
+</nav>
+`;
   $(elementContainer).append(popupMenuHTML);
+  $(elementContainer).prepend(contextMenuHTML);
   $('#edit-popup-menu').hide().fadeIn(1000);
   $('button.close').on('click', function() {
     $('#edit-popup-menu').hide().fadeOut(1000);
@@ -237,28 +375,6 @@ function removeHoverStyle() {
   });
   document.body.style.cursor = originalPageStyles.cursor;
   $('#chrome-edit-cursor').remove();
-}
-
-// Wrap wrapper around nodes
-// Just pass a collection of nodes, and a wrapper element
-function wrapAll(nodes, wrapper) {
-  // Cache the current parent and previous sibling of the first node.
-  const parent = nodes.parentNode;
-  const previousSibling = nodes.previousSibling;
-
-  // Place each node in wrapper.
-  //  - If nodes is an array, we must increment the index we grab from
-  //    after each loop.
-  //  - If nodes is a NodeList, each node is automatically removed from
-  //    the NodeList when it is removed from its parent with appendChild.
-  for (let i = 0; nodes.length - i; wrapper.firstChild === nodes[0] && i++) {
-    wrapper.appendChild(nodes[i]);
-  }
-
-  // Place the wrapper just after the cached previousSibling
-  parent.insertBefore(wrapper, previousSibling.nextSibling);
-
-  return wrapper;
 }
 
 function getDomPath(el) {

@@ -49,6 +49,13 @@ gulp.task('images', () => {
     })))
     .pipe(gulp.dest('dist/images'));
 });
+
+gulp.task('contextMenuCSS', () => {
+  return gulp.src('app/bower_components/jQuery-contextMenu/dist/jquery.contextMenu.min.css')
+    ,pipe(gulp.concat('styles/inject.css'))
+    .pipe(gulp.dest('styles'));
+});
+
 gulp.task('styles', () => {
   return gulp.src('app/styles.scss/*.scss')
     .pipe($.plumber())
@@ -136,7 +143,7 @@ gulp.task('package', function () {
 
 gulp.task('build', (cb) => {
   runSequence(
-    'lint', 'babel', 'chromeManifest',
+    'lint', 'babel', 'styles', 'contextMenuCSS', 'chromeManifest',
     ['html', 'images', 'extras'],
     'size', cb);
 });

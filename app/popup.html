@@ -2,80 +2,156 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <link href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" rel="stylesheet">
-    <link href="styles/main.css" rel="stylesheet">
-    <link href="bower_components/angular/angular-csp.css" rel="stylesheet">
-    <link rel="stylesheet" href="bower_components/angular-bootstrap-colorpicker/css/colorpicker.min.css" />
+	<meta charset="utf-8">
+	<link href="https://unpkg.com/purecss@1.0.0/build/pure-min.css"
+	rel="stylesheet">
+	<link href="styles/main.css" rel="stylesheet">
+	<link href="bower_components/angular/angular-csp.css"
+	rel="stylesheet">
+	<link rel="stylesheet" href="bower_components/angular-bootstrap-colorpicker/css/colorpicker.min.css"
+	/>
+	<link rel="stylesheet" href="bower_components/angular-fontselect/dist/angular-fontselect.min.css">
 
-    <script src="bower_components/angular/angular.js"></script>
-    <script src="bower_components/angular-sanitize/angular-sanitize.min.js"></script>
-    <script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
-    <script src="bower_components/angular-bootstrap-colorpicker/js/bootstrap-colorpicker-module.min.js"></script>
-    <script src="scripts/popup.js"></script>
-    <script src="scripts/app_factory.js"></script>
-    <script src="scripts/app.js"></script>
+
+	<script src="bower_components/angular/angular.js"></script>
+	<script src="bower_components/angular-sanitize/angular-sanitize.min.js"></script>
+	<script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
+	<script src="bower_components/ng-lodash/build/ng-lodash.min.js"></script>
+	<script src="bower_components/angular-fontselect/dist/angular-fontselect.min.js"></script>
+	<script src="bower_components/angular-bootstrap-colorpicker/js/bootstrap-colorpicker-module.min.js"></script>
+	<script src="scripts/popup.js"></script>
+	<script src="scripts/app_factory.js"></script>
+	<script src="scripts/app.js"></script>
 </head>
 
 <body ng-app="themerApp">
-    <div class="main" ng-controller="EditController">
-        <div class="pure-menu pure-menu-horizontal">
-            <ul class="pure-menu-list">
-                <li class="pure-menu-item">
-                    <a class="pure-menu-link uppercase-text" ng-click="showTab = 'Edit'" href="#">Edits</a>
-                </li>
-                <li class="pure-menu-item">
-                    <a class="pure-menu-link uppercase-text" ng-click="showTab = 'Filters'" href="#">Filters</a>
-                </li>
-                <li class="pure-menu-item">
-                  <input type="checkbox" class="tgl tgl-ios" id="day-night-toggle" />
-                </li>
-            </ul>
-        </div>
-        <div id="clouds">
-            <span class="rainbow-text anim-text-flow" rainbow-text-dir></span>
-            <div class="cloud x1"></div>
-            <!-- Time for multiple clouds to dance around -->
-            <div class="cloud x2"></div>
-            <div class="pure-g">
-                <div class="row" ng-show="showTab == 'Edit'" ng-cloak>
-                    <div class="card">
-                        <div class="main" id="content-1">
-                            <h1 class="panel-title">Edits</h1>
-                            <div edit-button-directive></div>
-                            <p ng-model="errMessage"></p>
-                        </div>
-                    </div>
-                    <a class="show-filter" ng-click="toggleTextReplace = !toggleTextReplace" href="#">Replace Text</a>
-                    <form class="pure-form pure-form-aligned" ng-show="toggleTextReplace" ng-cloak>
-                        <div class="pure-control-group">
-                            <label class="normal" for="find-text">Find:</label>
-                            <input class="txt-replace-input" id="find-text" type="text" ng-model="txtFind" ng-change="saveFindTextValue()">
-                        </div>
-                        <div class="pure-control-group">
-                            <label class="normal" for="replace-text">Replace:</label>
-                            <input class="txt-replace-input" id="replace-text" type="text" ng-model="txtReplace">
-                        </div>
-                        <button type="submit" ng-click="textReplace()" class="pure-button pure-button-primary">Replace</button>
-                    </form>
-                    <label>Change Background Color</label>
-                    <input class="button-xsmall pure-button" colorpicker type="text" ng-model="color" ng-style="{'background-color': color}" ng-change="changeBackgroundColor()" />
-
-                </div>
-                <div class="row" ng-show="showTab == 'Filters'" ng-cloak>
-                    <div class="card">
-                        <a class="show-filter" href="#">Colorblind</a>
-                        <label class="pure-checkbox">
-                            <input type="checkbox" value=""> Protonopia
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div class="cloud x3"></div>
-            <div class="cloud x4"></div>
-            <div class="cloud x5"></div>
-        </div>
-    </div>
+	<div class="main" ng-controller="EditController as ctrl">
+		<div class="pure-menu pure-menu-horizontal">
+			<ul class="pure-menu-list">
+				<li class="pure-menu-item">
+					<a class="pure-menu-link uppercase-text"
+					ng-click="ctrl.showTab = 'Edit'" href="#">
+            Edits
+          </a>
+				</li>
+				<li class="pure-menu-item">
+					<a class="pure-menu-link uppercase-text"
+					ng-click="ctrl.showTab = 'Filters'"
+					href="#">
+            Filters
+          </a>
+				</li>
+				<li class="pure-menu-item">
+					<a class="pure-menu-link uppercase-text"
+					ng-click="ctrl.showTab = 'Options'"
+					href="#">
+            Options
+          </a>
+				</li>
+			</ul>
+		</div>
+		<div id="clouds">
+			<span class="rainbow-text anim-text-flow"
+			rainbow-text-dir></span>
+			<div class="cloud x1"></div>
+			<!-- Time for multiple clouds to dance around -->
+			<div class="cloud x2"></div>
+			<div class="pure-g">
+				<div class="row" ng-show="ctrl.showTab == 'Edit'"
+				ng-cloak>
+					<div class="container">
+						<div id="content-1">
+							<h3 class="panel-title">Edits</h3>
+							<p ng-if="!ctrl.edits.textReplaceEdits">
+								No Text Edits Saved For Current Site
+							</p>
+							<div class="pure-u-1 pure-u-sm-1-3">
+								<ul id="edits-list">
+									<li ng-repeat="(key, value) in ctrl.edits">
+										<a class="show-filter" href="#" ng-click="ctrl.showEdit = key">
+											{{key}}
+										</a>
+									</li>
+								</ul>
+								<p ng-if="ctrl.showEdit === 'backgroundColor'">
+									Changed Background Color to {{ctrl.edits.backgroundColor.color}}
+								</p>
+								<div class="pure-u-1 pure-u-md-1-3" ng-if="ctrl.showEdit === 'textReplaceEdits'">
+									<ul ng-repeat="t in ctrl.edits.textReplaceEdits">
+                    <li>Replaced {{t.originalText}} With {{t.replaceText}}</li>
+                  </ul>
+								</div>
+							</div>
+							<button ng-click='ctrl.triggerEditElementAction()'
+							id='edit-button' class='button-small pure-button'>
+								+ Edit
+							</button>
+						</div>
+					</div>
+					<a class="show-filter" ng-click="ctrl.toggleNewEdit = !ctrl.toggleNewEdit"
+					href="#">Add New Edit</a>
+					<div class="pure-control-group row" ng-if="ctrl.toggleNewEdit">
+						<input type="checkbox" ng-checked="saveEditToDomain">Save Edit to Domain </input>
+						<p>Page Font Select : {{ctrl.selectedGlobalPageFont}}</p>
+						<button type="submit" ng-click="ctrl.fontChange(ctrl.selectedGlobalPageFont)">Apply Font</button>
+						<jd-fontselect name="ctrl.selectedGlobalPageFont" />
+					</div>
+					<a class="show-filter" ng-click="ctrl.toggleTextReplace = !ctrl.toggleTextReplace"
+					href="#">
+            Replace Text
+          </a>
+					<form class="pure-form pure-form-aligned"
+					ng-if="ctrl.toggleTextReplace" ng-cloak>
+						<div class="pure-control-group">
+							<label class="normal" for="find-text">Find:</label>
+							<input class="txt-replace-input" id="find-text"
+							type="text" ng-model="ctrl.txtFind"
+							ng-change="saveFindTextValue()">
+						</div>
+						<div class="pure-control-group">
+							<label class="normal" for="replace-text">Replace:</label>
+							<input class="txt-replace-input" id="replace-text"
+							type="text" ng-model="ctrl.txtReplace">
+						</div>
+						<button type="submit" ng-click="ctrl.textReplace()"
+						class="pure-button pure-button-primary">Replace</button>
+					</form>
+					<div class="row">
+						<a class="show-filter" href="#" ng-click="ctrl.toggleColorPicker = !ctrl.toggleColorPicker">Change Background Color</a>
+						<div ng-if="ctrl.toggleColorPicker">
+							<input class="button-xsmall pure-button"
+							colorpicker type="text" ng-model="ctrl.color"
+							ng-style="{'background-color': ctrl.color}"
+							ng-change="ctrl.changeBackgroundColor()"
+							/>
+						</div>
+					</div>
+				</div>
+				<div class="row" ng-show="ctrl.showTab == 'Filters'"
+				ng-cloak>
+					<div class="card">
+						<ul class="tg-list">
+							<li class="tg-list-item">
+								<a class="show-filter" href="#" ng-click="ctrl.toggleColorBlindFilter = !ctrl.toggleColorBlindFilter">
+                  Colorblind
+                </a>
+								<div class="pure-control-group" ng-if="ctrl.toggleColorBlindFilter">
+									<div sel></div>
+								</div>
+							</li>
+							<li class="tg-list-item">
+								<a class="show-filter" href="#" ng-click="ctrl.inverseWebpage()">
+                  Inverse Webpage </a>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="cloud x3"></div>
+			<div class="cloud x4"></div>
+			<div class="cloud x5"></div>
+		</div>
+	</div>
 </body>
 
 </html>

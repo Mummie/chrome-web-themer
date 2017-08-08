@@ -1,115 +1,219 @@
 // AngularJS controller and directive code
-const app = angular.module('themerApp', ['ContentScriptFactory', 'ngCookies', 'colorpicker.module']);
-app.controller('EditController', function($scope, $cookies, ContentScriptFactory) {
-    $scope.toggleTextReplace = false;
-    $scope.showTab = 'Edit';
-    $scope.color = '#000';
 
-    $scope.triggerEditElementAction = function() {
-        ContentScriptFactory.triggerEditAction().then(function(editedElement) {
-            console.log('edit', editedElement);
-        });
+const app = angular.module('themerApp', ['ContentScriptFactory', 'ngCookies', 'colorpicker.module', 'ngLodash', 'jdFontselect']);
+
+class EditCtrl {
+  constructor($scope, $cookies, ContentScriptFactory, lodash) {
+    const _this = this;
+    _this.toggleTextReplace = false;
+    _this.toggleColorPicker = false;
+    _this.toggleColorBlindFilter = false;
+    _this.toggleNewEdit = false;
+    _this.showTab = 'Edit';
+    _this.color = '#000';
+    _this.currentDomain = window.location.origin;
+    _this.edits = null;
+    _this.showEdit = '';
+    _this.ContentScriptFactory = ContentScriptFactory;
+    _this.cookies = $cookies;
+    _this.lodash = lodash;
+    _this.filters = {};
+    _this.isWebpageInversed = false;
+    _this.colorBlindFilter;
+    _this.selectedGlobalPageFont;
+    console.log(_this.currentDomain);
+
+    ContentScriptFactory.getCurrentURLEdits().then(edits => {
+      if (!lodash.isEmpty(edits)) {
+        _this.edits = lodash.assign({}, edits);
+        console.log(_this.edits);
+        if (_this.edits.backgroundColor && _this.edits.backgroundColor.color) {
+          _this.color = _this.edits.backgroundColor.color;
+        }
+      }
+    });
+
+    $scope.triggerEditElementAction = () => {
+      _this.triggerEditElementAction();
     };
 
+    $scope.getAllEdits = _this.getAllEdits();
 
+    $scope.changeBackgroundColor = () => {
+      _this.changeBackgroundColor();
+    };
 
-    $scope.txtFind = $cookies.get('find');
-    $scope.txtReplace = $cookies.get('replace');
+    $scope.textReplace = () => {
+      _this.textReplace();
+    };
 
-    $scope.filters = {};
-    $scope.filters.colorblind = [{
-        mode: 'Protonopia',
-        selected: false
-    }, {
-        mode: 'Deuteranopia',
-        selected: false
-    }];
+    $scope.fontChange = (font) => {
+      _this.fontChange(font);
+    };
 
-    $scope.changeBackgroundColor = function() {
-      const colorObj = { command: 'changeColor', color: $scope.color };
-      chrome.tabs.getSelected(null, function(tab) {
-        chrome.tabs.sendMessage(tab.id, colorObj, function(res) {
-          if(res.element && res.color) {
-            ContentScriptFactory.saveBackgroundColorEdit(tab.url, res).then(function(isSaved) {
+    $scope.inverseWebpage = () => {
+      _this.inverseWebpage();
+    };
+  }
+
+  triggerEditElementAction() {
+    this.ContentScriptFactory.triggerEditAction()
+      .then(editedElement => {
+        console.log('edit', editedElement);
+      });
+  }
+
+  getAllEdits() {
+    this.ContentScriptFactory.getAllEdits()
+      .then(edits => {
+        console.log('all edits', edits);
+        return edits;
+      });
+  }
+
+  changeBackgroundColor() {
+    const _this = this;
+    const colorObj = {
+      command: 'changeColor',
+      color: _this.color
+    };
+    console.log(colorObj);
+    chrome.tabs.getSelected(null, tab => {
+      chrome.tabs.sendMessage(tab.id, colorObj, res => {
+        if (res && res.color) {
+        _this.ContentScriptFactory.saveBackgroundColorEdit(tab.url, res)
+        .then(isSaved => {
+            console.log(isSaved);
+          });
+        }
+      });
+    });
+  }
+
+  textReplace() {
+    if (this.txtReplace && this.txtReplace.length > 0) {
+      const _this = this;
+      this.cookies.putObject('find', this.txtFind);
+      this.cookies.putObject('replace', this.txtReplace);
+      const txtRplObj = {
+        find: this.txtFind,
+        replace: this.txtReplace,
+        command: 'textReplace'
+      };
+      chrome.tabs.getSelected(null, tab => {
+        const url = tab.url;
+        chrome.tabs.sendMessage(tab.id, txtRplObj, res => {
+          if (typeof res != 'undefined') {
+            _this.ContentScriptFactory.textReplaceAction(url, res)
+            .then(isSaved => {
               console.log(isSaved);
             });
           }
         });
       });
-    };
+    }
+  }
 
-    $scope.textReplace = function() {
-        if ($scope.txtReplace && $scope.txtReplace.length > 0) {
-            $cookies.putObject('find', $scope.txtFind);
-            $cookies.putObject('replace', $scope.txtReplace);
-            const txtRplObj = {
-                find: $scope.txtFind,
-                replace: $scope.txtReplace
-            };
-            chrome.tabs.getSelected(null, function(tab) {
-                const url = tab.url;
-                chrome.tabs.sendMessage(tab.id, txtRplObj, function(res) {
-                    if (typeof res != 'undefined') {
-                      ContentScriptFactory.textReplaceAction(url, res).then(function(isSaved) {
-                        console.log(isSaved);
-                      });
-                    }
-                });
-            });
+  fontChange() {
+    const _this = this;
+    console.log(_this.selectedGlobalPageFont);
+    chrome.tabs.getSelected(null, tab => {
+      const url = tab.url;
+      chrome.tabs.sendMessage(tab.id, { command: 'changePageFont', font: _this.selectedGlobalPageFont }, res => {
+        if (res && typeof res != 'undefined') {
+          _this.ContentScriptFactory.saveEditToURL({ 'fontFamily': _this.selectedGlobalPageFont });
         }
-    };
-
-    //Handle Errors
-    $scope.$on('error', function(event, data) {
-        $scope.errMessage = data;
+      });
     });
-});
-app.directive('rainbowTextDir', function($compile) {
+  }
+
+  inverseWebpage() {
+    const _this = this;
+    _this.isWebpageInversed = !_this.isWebpageInversed;
+    chrome.tabs.getSelected(null, tab => {
+      chrome.tabs.sendMessage(tab.id, { command: 'Inverse Webpage', inverse: _this.isWebpageInversed }, res => {
+        if(res) {
+          console.log(res);
+        }
+      });
+    });
+  }
+}
+
+EditCtrl.$inject = ['$scope', '$cookies', 'ContentScriptFactory', 'lodash'];
+
+app.controller('EditController', EditCtrl);
+
+app.directive('fdFontDropdown', function() {
   return {
-    restrict: 'EA',
-    replace: false,
-    scope: true,
-    link: function(scope, element) {
-      let html = 'Chrome Web Themer';
-      let chars = html.trim().split('');
-      let template = '<span>' + chars.join('</span><span>') + '</span';
-      const linkFn = $compile(template);
-      const content = linkFn(scope);
-      element.append(content);
+    restrict: 'A',
+    controller: 'EditController',
+    link: function(scope, element, attr, Ctrl) {
+      Ctrl.loadFonts();
+      scope.fontslist = Ctrl.FONTSLIST;
+      scope.selectedIdx = Math.floor(Math.random() * scope.fontslist.length);
+      scope.changeFont = function(idx) {
+        scope.selectedIdx = idx;
+        return console.log(idx);
+      };
+      return element.bind('click', function() {
+        return element.toggleClass("active");
+      });
     }
   };
 });
 
-app.directive('editButtonDirective', function($compile) {
-    return {
-        restrict: 'A',
-        scope: true,
-        link: function(scope, element) {
-            const template = "<button ng-click='triggerEditElementAction()' id='edit-button' class='button-small pure-button'>+ Edit</button>";
-            const linkFn = $compile(template);
-            const content = linkFn(scope);
-            element.append(content);
-        }
-    };
-});
+app.directive('rainbowTextDir', $compile => ({
+  restrict: 'EA',
+  replace: false,
+  scope: true,
 
-app.directive('sel', function() {
-    return {
-        template: '<select ng-model="selectedValue" ng-options="f.mode for f in filters.colorblind"></select>',
-        restrict: 'E',
-        scope: {
-            selectedValue: '='
-        },
-        link: function(scope, elem) {
-            scope.filters.colorblind = [{
-                mode: 'Protonopia',
-                selected: false
-            }, {
-                mode: 'Deuteranopia',
-                selected: false
-            }];
+  link(scope, element) {
+    let html = 'Chrome Web Themer';
+    let chars = html.trim().split('');
+    let template = `<span>${chars.join('</span><span>')}</span`;
+    const linkFn = $compile(template);
+    const content = linkFn(scope);
+    element.append(content);
+  }
+}));
 
-            scope.selectedValue = scope.filters.colorblind[1];
-        }
-    };
-});
+app.directive('toggleInverse', () => ({
+  restrict: 'A',
+  scope: true,
+  link(scope, element) {
+    element.on('click', () => {
+      console.log(scope.isWebpageInversed);
+      scope.isWebpageInversed = !scope.isWebpageInversed;
+      scope.inverseWebpage(scope.isWebpageInversed);
+    });
+  }
+}))
+
+
+app.directive('sel', () => ({
+  template: `
+  <select
+    ng-model="colorBlindFilter"
+    ng-change="applyColorBlindFilter(colorBlindFilter)"
+    ng-options="f.mode for f in filters.colorblind">
+  </select>`,
+  restrict: 'E',
+
+  scope: {
+    colorBlindFilter: '=',
+    applyColorBlindFilter: '&'
+  },
+
+  link(scope) {
+    scope.filters.colorblind = [{
+      mode: 'Protonopia',
+      selected: false
+    }, {
+      mode: 'Deuteranopia',
+      selected: false
+    }];
+
+    scope.selectedValue = scope.filters.colorblind[1];
+  }
+}));

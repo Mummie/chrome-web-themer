@@ -37,6 +37,10 @@ $font_0: Helvetica Neue;
 $font_1: Helvetica;
 $font_2: Arial;
 $font_3: sans-serif;
+$fontDropdownWidth: 220px;
+$fontDropdownHeight: 200px;
+$fontDropdownRadius: 5px;
+$fontDropdownColor: #2689d6;
 @import url(https://fonts.googleapis.com/css?family=Ubuntu:300);
 * {
     margin: 0;
@@ -45,10 +49,9 @@ $font_3: sans-serif;
 
 body {
     width: 300px;
-    overflow: hidden;
+    overflow: scroll;
     font-family: 'Ubuntu';
-    letter-spacing: 0.2em;
-    font-size: 18px;
+    font-size: 4.5vw;
     line-height: 2;
 }
 
@@ -150,6 +153,161 @@ input[type="checkbox"] {
     outline: none;
 }
 
+.font-dropdown {
+    width: $fontDropdownWidth;
+    border-radius: $fontDropdownRadius;
+    position: relative;
+    margin: 10px auto 0;
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    cursor: pointer;
+    outline: none;
+
+    .label {
+        @include user-select(none);
+        font-size: 1.2em;
+        position: relative;
+        display: block;
+        padding: 0 10px;
+        height: 36px;
+        line-height: 36px;
+        z-index: 2;
+        white-space: nowrap;
+        overflow: hidden;
+
+        &:after {
+            @include transition(transform .3s);
+           position: absolute;
+	         width: 0;
+	         height: 0;
+           content: "";
+           border-left: 7px solid transparent;
+           border-right: 7px solid transparent;
+           border-top: 7px solid #ccc;
+            left: auto;
+            right: 11px;
+            bottom: 13px;
+        }
+    }
+
+    .dropdown-list {
+        @include transition(all .2s);
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        width: $fontDropdownWidth;
+        border-radius: $fontDropdownRadius;
+        max-height: $fontDropdownHeight / 3;
+        box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        position: absolute;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        border: 1px solid #ccc;
+        background-color: #fff;
+        overflow-x: hidden;
+        overflow-y: auto;
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    &.active {
+        .dropdown-list {
+            max-height: $fontDropdownHeight;
+            top: 37px;
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .label:after {
+            @include rotate(180deg);
+        }
+    }
+
+    li {
+        padding: 0 10px;
+        font-size: 1.4em;
+        line-height: 1.5em;
+        white-space: nowrap;
+        overflow: hidden;
+        &:hover {
+            color: #fff;
+            background-color: $fontDropdownColor;
+        }
+    }
+    .sel {
+        background-color: rgb(240,240,240);
+        color: $fontDropdownColor;
+    }
+}
+
+.tgl {
+	display: none;
+
+	// add default box-sizing for this scope
+	&,
+  &:after,
+  &:before,
+	& *,
+  & *:after,
+  & *:before,
+	& + .tgl-btn {
+		box-sizing: border-box;
+		&::selection {
+			background: none;
+		}
+	}
+
+	+ .tgl-btn {
+		outline: 0;
+		display: block;
+		width: 4em;
+		height: 2em;
+		position: relative;
+		cursor: pointer;
+    user-select: none;
+		&:after,
+    &:before {
+			position: relative;
+			display: block;
+			content: "";
+			width: 50%;
+			height: 100%;
+		}
+
+		&:after {
+			left: 0;
+		}
+
+		&:before {
+			display: none;
+		}
+	}
+
+	&:checked + .tgl-btn:after {
+		left: 50%;
+	}
+}
+
+// themes
+.tgl-light {
+	+ .tgl-btn {
+		background: #f0f0f0;
+		border-radius: 2em;
+		padding: 2px;
+		transition: all .4s ease;
+		&:after {
+			border-radius: 50%;
+			background: #fff;
+			transition: all .2s ease;
+		}
+	}
+
+	&:checked + .tgl-btn {
+		background: #9FD6AE;
+	}
+}
+
 .normal {
     background: $white;
     position: relative;
@@ -197,7 +355,7 @@ input[type="checkbox"] {
     display: inline;
     transform: scaleX(2.5);
     text-shadow: 0 2px 2px rgba(255, 255, 255, 0.7), 0 10px 4px rgba(0, 0, 0, 0.5);
-    font-size: 20px;
+    font-size: 4.5vw;
     cursor: pointer;
 }
 
@@ -496,11 +654,9 @@ input[type="checkbox"] {
 .pure-button {
   width: 80px;
   color: white;
+  background-color: darkslategrey;
+  border-radius: 5px;
 }
-/*Lets start with the cloud formation rather*/
-
-
-/*The container will also serve as the SKY*/
 
 #clouds {
     padding: 100px 0;
@@ -897,7 +1053,7 @@ animation-delay:4s;
     text-decoration: none;
     color: #eee;
     text-transform: uppercase;
-    font-size: 21px;
+    font-size: 22px;
     line-height: 15px;
 }
 
