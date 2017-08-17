@@ -62,6 +62,14 @@
 					<div class="container">
 						<div id="content-1">
 							<h3 class="panel-title">Edits</h3>
+							<a class="show-filter" ng-if="ctrl.edits != null" ng-click="ctrl.showEdits = !ctrl.showEdits">
+								View All Page Edits
+							</a>
+							<div ng-if="ctrl.showEdits">
+								<ul ng-repeat="edit in ctrl.edits">
+									<li>{{edit}}</li>
+								</ul>
+							</div>
 							<p ng-if="!ctrl.edits.textReplaceEdits">
 								No Text Edits Saved For Current Site
 							</p>

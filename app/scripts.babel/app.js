@@ -9,6 +9,7 @@ class EditCtrl {
     _this.toggleColorPicker = false;
     _this.toggleColorBlindFilter = false;
     _this.toggleNewEdit = false;
+    _this.errorMessage = {};
     _this.showTab = 'Edit';
     _this.color = '#000';
     _this.currentDomain = window.location.origin;
@@ -22,6 +23,14 @@ class EditCtrl {
     _this.colorBlindFilter;
     _this.selectedGlobalPageFont;
     console.log(_this.currentDomain);
+
+    chrome.runtime.onConnect.addListener(function(port) {
+
+      port.onMessage.addListener(function(err) {
+        console.log('error passed to background ' + err);
+        Object.assign(_this.errorMessage, err);
+      });
+    });
 
     ContentScriptFactory.getCurrentURLEdits().then(edits => {
       if (!lodash.isEmpty(edits)) {
@@ -121,7 +130,7 @@ class EditCtrl {
       const url = tab.url;
       chrome.tabs.sendMessage(tab.id, { command: 'changePageFont', font: _this.selectedGlobalPageFont }, res => {
         if (res && typeof res != 'undefined') {
-          _this.ContentScriptFactory.saveEditToURL({ 'fontFamily': _this.selectedGlobalPageFont });
+          _this.ContentScriptFactory.saveEditToURL(url, { 'fontFamily': _this.selectedGlobalPageFont });
         }
       });
     });
