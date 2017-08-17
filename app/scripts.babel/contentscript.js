@@ -1,8 +1,7 @@
 // All code that has to step outside of chrome app dom and go to current page dom
 /* eslint-disable no-console */
 console.log('hello from content script!');
-
-// Union Marketing
+const supportsShadowDOMV1 = !!HTMLElement.prototype.attachShadow;
 
 const errorProxy = document.createElement('script');
 errorProxy.id = 'myErrorProxyScriptID';
@@ -92,6 +91,8 @@ const contextMenu = selector => ({
     }
   },
 
+  shadowRoot: $('template').shadowRoot,
+
   buildHTML() {
     const popupMenuHTML = `<nav class="chrome-themer-popup-menu" id="edit-popup-menu " role="navigation">
       <ul class="nav__list">
@@ -139,15 +140,15 @@ const contextMenu = selector => ({
   </nav>
   `;
     console.log($(selector));
-    let o = document.createElement('div');
-    o.innerHTML = popupMenuHTML;
+    let shadow = $(selector).attachShadow({mode: 'open'});
+    shadow.innerHTML = popupMenuHTML;
     $(selector).parentNode.append(o);
   },
 
   eventHandlers: [{
       name: 'changeText',
       icon: 'text',
-      element: $('.chrome-web-themer-edit-text'),
+      element: this.shadowRoot.querySelector('.chrome-web-themer-edit-text'),
       event: 'change',
       handler(e) {
         const newText = e.target.value;
@@ -159,7 +160,7 @@ const contextMenu = selector => ({
     {
       name: 'changeColor',
       icon: 'color',
-      element: $('.chrome-web-themer-change-color'),
+      element: this.shadowRoot.querySelector('.chrome-web-themer-change-color'),
       event: 'change',
       handler(e) {
         let _this = this;

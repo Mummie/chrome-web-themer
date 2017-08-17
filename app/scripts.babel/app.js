@@ -14,6 +14,7 @@ class EditCtrl {
     _this.color = '#000';
     _this.currentDomain = window.location.origin;
     _this.edits = null;
+    _this.showEdits = false;
     _this.showEdit = '';
     _this.ContentScriptFactory = ContentScriptFactory;
     _this.cookies = $cookies;

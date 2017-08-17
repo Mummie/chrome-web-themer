@@ -1,5 +1,25 @@
 'use strict';
 
+let saveEditToURL = function(url, edit) {
+
+  chrome.storage.sync.get(url, function(pageEdits) {
+      for(let key in Object.keys(edit)) {
+        if(lodash.isEmpty(pageEdits[url])) {
+          let obj = {};
+          obj[url][key] = edit[key];
+          console.log(obj[url][key]);
+          chrome.storage.sync.set(obj);
+        }
+        else {
+          pageEdits[url][key] = edit[key];
+          console.log(pageEdits[url][key]);
+          chrome.storage.sync.set(pageEdits);
+        }
+      }
+
+  });
+}
+
 chrome.tabs.query({ 'active': true, 'currentWindow': true }, function(tabs) {
     currentURL = tabs[0].url;
     chrome.storage.sync.get(`${currentURL}`, function(edits) {
@@ -19,6 +39,9 @@ chrome.runtime.onMessage.addListener(
                 "from a content script:" + sender.tab.url :
                 "from the extension");
     console.log(request);
+    if(request.command === 'saveEdit') {
+      saveEditToURL(sender.tab.url, request.edit);
+    }
       sendResponse({farewell: "goodbye"});
       return true;
   });
