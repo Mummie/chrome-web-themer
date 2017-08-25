@@ -9,10 +9,9 @@ class EditCtrl {
     _this.toggleColorPicker = false;
     _this.toggleColorBlindFilter = false;
     _this.toggleNewEdit = false;
-    _this.errorMessage = {};
+    _this.errorMessage = null;
     _this.showTab = 'Edit';
     _this.color = '#000';
-    _this.currentDomain = window.location.origin;
     _this.edits = null;
     _this.showEdits = false;
     _this.showEdit = '';
@@ -23,7 +22,6 @@ class EditCtrl {
     _this.isWebpageInversed = false;
     _this.colorBlindFilter;
     _this.selectedGlobalPageFont;
-    console.log(_this.currentDomain);
 
     chrome.runtime.onConnect.addListener(function(port) {
 
@@ -87,16 +85,8 @@ class EditCtrl {
       command: 'changeColor',
       color: _this.color
     };
-    console.log(colorObj);
     chrome.tabs.getSelected(null, tab => {
-      chrome.tabs.sendMessage(tab.id, colorObj, res => {
-        if (res && res.color) {
-        _this.ContentScriptFactory.saveBackgroundColorEdit(tab.url, res)
-        .then(isSaved => {
-            console.log(isSaved);
-          });
-        }
-      });
+      chrome.tabs.sendMessage(tab.id, colorObj);
     });
   }
 

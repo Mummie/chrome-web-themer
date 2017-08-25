@@ -1,0 +1,146 @@
+<style>
+ .chrome-themer-popup-menu {
+  z-index: 9999;
+  position: fixed;
+  width: 270px;
+  background-color: black;
+  top: 0;
+  margin-left: 200px;
+}
+
+:host ul {
+  list-style: none;
+}
+
+:host ul li {
+  list-style: none;
+  color: #FFF;
+}
+
+:host ul li label {
+  cursor: pointer;
+}
+
+:host nav a,
+:host .nav label {
+  display: block;
+  padding: .85rem;
+  cursor: pointer;
+  color: #fff;
+  background-color: #151515;
+  box-shadow: inset 0 -1px #1d1d1d;
+  -webkit-transition: all .25s ease-in;
+  transition: all .25s ease-in;
+}
+
+:host .nav a:focus,
+:host .nav a:hover,
+:host .nav label:focus,
+:host .nav label:hover {
+  color: rgba(255, 255, 255, 0.5);
+  background: #030303;
+}
+
+:host .group-list a,
+:host .group-list label {
+  padding-left: 2rem;
+  background: #252525;
+  box-shadow: inset 0 -1px #373737;
+}
+
+:host .group-list a:focus,
+:host .group-list a:hover,
+:host .group-list label:focus,
+:host .group-list label:hover {
+  background: #131313;
+}
+
+:host .sub-group-list a,
+:host .sub-group-list label {
+  padding-left: 4rem;
+  background: #353535;
+  box-shadow: inset 0 -1px #474747;
+}
+
+:host .sub-group-list a:focus,
+:host .sub-group-list a:hover,
+:host .sub-group-list label:focus,
+:host .sub-group-list label:hover {
+  background: #232323;
+  cursor: pointer;
+}
+
+:host .sub-sub-group-list a,
+:host .sub-sub-group-list label {
+  padding-left: 6rem;
+  background: #454545;
+  box-shadow: inset 0 -1px #575757;
+}
+
+:host .sub-sub-group-list a:focus,
+:host .sub-sub-group-list a:hover,
+:host .sub-sub-group-list label:focus,
+:host .sub-sub-group-list label:hover {
+  background: #333333;
+}
+
+:host .group-list,
+:host .sub-group-list,
+:host .sub-sub-group-list {
+  height: 100%;
+  max-height: 0;
+  overflow: hidden;
+  -webkit-transition: max-height .5s ease-in-out;
+  transition: max-height .5s ease-in-out;
+}
+
+:host .nav__list input[type=checkbox]:checked + label + ul {
+  /* reset the height when checkbox is checked */
+  max-height: 1000px;
+}
+</style>
+<nav class="chrome-themer-popup-menu" id="edit-popup-menu " role="navigation">
+<ul class="nav__list">
+  <li>
+    <input id="group-1" type="checkbox" hidden />
+    <label for="group-1"><span class="fa fa-angle-right"></span>Colors</label>
+    <ul class="group-list">
+      <li>
+        <label>Change Color</label>
+        <input class='chrome-web-themer-change-color jscolor {position: 'right'}' value="abs567" />
+      </li>
+      <li>
+        <input id="sub-group-1" type="checkbox" hidden />
+        <label for="sub-group-1"><span class="fa fa-angle-right"></span> Second level</label>
+        <ul class="sub-group-list">
+          <li><a href="#">2nd level nav item</a>
+          </li>
+          <li><a href="#">2nd level nav item</a>
+          </li>
+          <li><a href="#">2nd level nav item</a>
+          </li>
+          <li>
+            <input id="sub-sub-group-1" type="checkbox" hidden />
+            <label for="sub-sub-group-1"><span class="fa fa-angle-right"></span> Third level</label>
+            <ul class="sub-sub-group-list">
+              <li><a href="#">3rd level nav item</a>
+              </li>
+              <li><a href="#">3rd level nav item</a>
+              </li>
+              <li><a href="#">3rd level nav item</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <input id="group-2" type="checkbox" hidden />
+    <label for="group-2"><span class="fa fa-angle-right"></span>Text</label>
+    <ul class="group-list">
+      <li>
+        <input type='text' class='chrome-web-themer-edit-text' />
+        <label for='chrome-web-themer-edit-text'>New Text: </label>
+      </li>
+    </ul>
+</ul>
+</nav>

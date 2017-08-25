@@ -1,6 +1,9 @@
 {
   "name": "chrome-web-themer",
-  "private": true,
+  "version": "0.4.0",
+  "scripts": {
+    "test": "node_modules/.bin/phantomjs test/run.js"
+  },
   "engines": {
     "node": ">=0.8.0"
   },
@@ -28,6 +31,7 @@
     "gulp-useref": "^3.0.8",
     "gulp-zip": "^3.2.0",
     "main-bower-files": "^2.11.1",
+    "polymer-build": "^2.0.0",
     "pug": "^2.0.0-beta11",
     "run-sequence": "^1.1.5",
     "wiredep": "^4.0.0"
@@ -49,10 +53,17 @@
     }
   },
   "dependencies": {
+    "@webcomponents/webcomponentsjs": "^1.0.8",
+    "chai": "^4.1.1",
     "color-blind": "^0.1.1",
     "eslint-plugin-angular": "^2.5.0",
+    "fs": "0.0.1-security",
     "gulp-pug": "^3.2.0",
     "mocha": "^3.5.0",
-    "sinon-chrome": "^2.2.1"
+    "phantomjs": "^2.1.7",
+    "sinon": "^3.2.1",
+    "sinon-chrome": "^2.2.1",
+    "vm": "^0.1.0",
+    "webpage": "^0.3.0"
   }
 }

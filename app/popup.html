@@ -65,13 +65,16 @@
 							<a class="show-filter" ng-if="ctrl.edits != null" ng-click="ctrl.showEdits = !ctrl.showEdits">
 								View All Page Edits
 							</a>
+							<div ng-if="ctrl.errorMessage">
+								<p class="error-msg">{{ctrl.errorMessage}}</p>
+							</div>
 							<div ng-if="ctrl.showEdits">
 								<ul ng-repeat="edit in ctrl.edits">
 									<li>{{edit}}</li>
 								</ul>
 							</div>
-							<p ng-if="!ctrl.edits.textReplaceEdits">
-								No Text Edits Saved For Current Site
+							<p ng-if="!ctrl.edits">
+								No Edits Saved For Current Site
 							</p>
 							<div class="pure-u-1 pure-u-sm-1-3">
 								<ul id="edits-list">
@@ -148,7 +151,7 @@
 								</div>
 							</li>
 							<li class="tg-list-item">
-								<a class="show-filter" href="#" ng-click="ctrl.inverseWebpage()">
+								<a ng-class="{'underlined': ctrl.isWebpageInversed}" class="show-filter" href="#" ng-click="ctrl.inverseWebpage()">
                   Inverse Webpage </a>
 							</li>
 						</ul>

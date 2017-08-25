@@ -1,17 +1,5 @@
-.shadow {
-    --shadow-transition_-_transition: box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-    --shadow-none_-_box-shadow: none;
-    --shadow-elevation-2dp_-_box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
-    --shadow-elevation-3dp_-_box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.14), 0 1px 8px 0 rgba(0, 0, 0, 0.12), 0 3px 3px -2px rgba(0, 0, 0, 0.4);
-    --shadow-elevation-4dp_-_box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
-    --shadow-elevation-6dp_-_box-shadow: 0 6px 10px 0 rgba(0, 0, 0, 0.14), 0 1px 18px 0 rgba(0, 0, 0, 0.12), 0 3px 5px -1px rgba(0, 0, 0, 0.4);
-    --shadow-elevation-8dp_-_box-shadow: 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12), 0 5px 5px -3px rgba(0, 0, 0, 0.4);
-    --shadow-elevation-12dp_-_box-shadow: 0 12px 16px 1px rgba(0, 0, 0, 0.14), 0 4px 22px 3px rgba(0, 0, 0, 0.12), 0 6px 7px -4px rgba(0, 0, 0, 0.4);
-    --shadow-elevation-16dp_-_box-shadow: 0 16px 24px 2px rgba(0, 0, 0, 0.14), 0 6px 30px 5px rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(0, 0, 0, 0.4);
-}
-
 .inverse-webpage {
-  -webkit-filter: invert(100%);
+    -webkit-filter: invert(100%);
     -moz-filter: invert(100%);
     -o-filter: invert(100%);
     -ms-filter: invert(100%);
@@ -23,7 +11,7 @@
 
 
 .chrome-web-themer-overlay {
-  background: rgba(0, 100, 255, 0.3);
+  background-color: rgba(0, 100, 255, 0.3);
   pointer-events: none;
 }
 
@@ -31,120 +19,118 @@
     height: 200px;
 }
 
-#edit-popup-menu {
-    z-index:2;
+:host {
+    z-index:9999;
     position:absolute;
-    width:150px;
-    background: black;
+    width: 270px;
+    background-color: black;
     color: #FFF;
     top: 0;
     left: 100px;
-}
-#edit-popup-menu ul {
-    list-style:none;
-}
-#edit-popup-menu ul li {
-    list-style: none;
-    color: #FFF;
-    height: 50px;
-}
 
-nav a,
-.nav label {
-  display: block;
-  padding: .85rem;
-  color: #fff;
-  background-color: #151515;
-  box-shadow: inset 0 -1px #1d1d1d;
-  -webkit-transition: all .25s ease-in;
-  transition: all .25s ease-in;
-}
+    ul {
+      list-style: none;
+    }
 
-.nav a:focus,
-.nav a:hover,
-.nav label:focus,
-.nav label:hover {
-  color: rgba(255, 255, 255, 0.5);
-  background: #030303;
-}
+    ul li {
+      list-style: none;
+      color: #FFF;
+    }
 
-.nav label {
-  cursor: pointer;
-}
+    ul li input {
+      cursor: pointer;
+    }
 
+     nav a,
+    .nav label {
+      display: block;
+      padding: .85rem;
+      cursor: pointer;
+      color: #fff;
+      background-color: #151515;
+      box-shadow: inset 0 -1px #1d1d1d;
+      -webkit-transition: all .25s ease-in;
+      transition: all .25s ease-in;
+    }
 
-/**
- * Styling first level lists items
- */
+    .nav a:focus,
+    .nav a:hover,
+    .nav label:focus,
+    .nav label:hover {
+      color: rgba(255, 255, 255, 0.5);
+      background: #030303;
+    }
 
-.group-list a,
-.group-list label {
-  padding-left: 2rem;
-  background: #252525;
-  box-shadow: inset 0 -1px #373737;
-}
+    .group-list a,
+    .group-list label {
+      padding-left: 2rem;
+      background: #252525;
+      box-shadow: inset 0 -1px #373737;
+    }
 
-.group-list a:focus,
-.group-list a:hover,
-.group-list label:focus,
-.group-list label:hover {
-  background: #131313;
-}
+    .group-list a:focus,
+    .group-list a:hover,
+    .group-list label:focus,
+    .group-list label:hover {
+      background: #131313;
+    }
 
 
-/**
- * Styling second level list items
- */
+    /**
+     * Styling second level list items
+     */
 
-.sub-group-list a,
-.sub-group-list label {
-  padding-left: 4rem;
-  background: #353535;
-  box-shadow: inset 0 -1px #474747;
-}
+    .sub-group-list a,
+    .sub-group-list label {
+      padding-left: 4rem;
+      background: #353535;
+      box-shadow: inset 0 -1px #474747;
+    }
 
-.sub-group-list a:focus,
-.sub-group-list a:hover,
-.sub-group-list label:focus,
-.sub-group-list label:hover {
-  background: #232323;
-}
-
-
-/**
- * Styling third level list items
- */
-
-.sub-sub-group-list a,
-.sub-sub-group-list label {
-  padding-left: 6rem;
-  background: #454545;
-  box-shadow: inset 0 -1px #575757;
-}
-
-.sub-sub-group-list a:focus,
-.sub-sub-group-list a:hover,
-.sub-sub-group-list label:focus,
-.sub-sub-group-list label:hover {
-  background: #333333;
-}
+    .sub-group-list a:focus,
+    .sub-group-list a:hover,
+    .sub-group-list label:focus,
+    .sub-group-list label:hover {
+      background: #232323;
+      cursor: pointer;
+    }
 
 
-/**
- * Hide nested lists
- */
+    /**
+     * Styling third level list items
+     */
 
-.group-list,
-.sub-group-list,
-.sub-sub-group-list {
-  height: 100%;
-  max-height: 0;
-  overflow: hidden;
-  -webkit-transition: max-height .5s ease-in-out;
-  transition: max-height .5s ease-in-out;
-}
+    .sub-sub-group-list a,
+    .sub-sub-group-list label {
+      padding-left: 6rem;
+      background: #454545;
+      box-shadow: inset 0 -1px #575757;
+    }
 
-.nav__list input[type=checkbox]:checked + label + ul {
-  /* reset the height when checkbox is checked */
-  max-height: 1000px;
+    .sub-sub-group-list a:focus,
+    .sub-sub-group-list a:hover,
+    .sub-sub-group-list label:focus,
+    .sub-sub-group-list label:hover {
+      background: #333333;
+    }
+
+
+    /**
+     * Hide nested lists
+     */
+
+    .group-list,
+    .sub-group-list,
+    .sub-sub-group-list {
+      height: 100%;
+      max-height: 0;
+      overflow: hidden;
+      -webkit-transition: max-height .5s ease-in-out;
+      transition: max-height .5s ease-in-out;
+    }
+
+    .nav__list input[type=checkbox]:checked + label + ul {
+      /* reset the height when checkbox is checked */
+      max-height: 1000px;
+    }
 }

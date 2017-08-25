@@ -1,86 +1,47 @@
-var node_modules = '../../node_modules/';
-// load mocha
-phantom.injectJs(node_modules + 'mocha/mocha.js');
-phantom.injectJs(node_modules + 'sinon-chrome/src/phantom-tweaks.js');
-mocha.setup({ui: 'bdd', reporter: 'spec'});
-
+var vm = require('vm');
 var fs = require('fs');
-var page;
-var beforeLoadFn;
+var chrome = require('sinon-chrome');
+var assert = require('chai').assert;
+var background = require('../app/scripts.babel/background.js');
 
-beforeEach(function() {
-  page = require('webpage').create();
+describe('background', function () {
 
-  page.onConsoleMessage = function(msg) {
-    console.log(msg);
-  };
-
-  page.onError = function(msg, trace) {
-    var msgStack = [msg];
-    if (trace && trace.length) {
-      msgStack.push('TRACE:');
-      trace.forEach(function(t) {
-        msgStack.push(' -> ' + t.file + ': ' + t.line + (t.function ? ' (in function "' + t.function +'")' : ''));
-      });
-    }
-    // we need try..catch here as mocha throws error that catched by phantom.onError
-    try {
-      mocha.throwError(msgStack.join('\n'));
-    } catch(e) { }
-  };
-
-  // inject chrome.* api mocks and other stuff into page
-  page.onInitialized = function() {
-    page.injectJs(node_modules + 'chai/chai.js');
-    page.injectJs(node_modules + 'sinon/pkg/sinon-1.11.1.js');
-    page.injectJs(node_modules + 'sinon-chrome/chrome.js');
-    page.injectJs(node_modules + 'sinon-chrome/src/phantom-tweaks.js');
-    page.evaluate(function() {
-      assert = chai.assert;
+    before(function () {
+        global.chrome = chrome;
     });
-    // run additional functions before page load
-    if (beforeLoadFn) {
-      beforeLoadFn();
-    }
-  };
-});
 
-afterEach(function() {
-  page.close();
-  beforeLoadFn = null;
-});
+    after(function () {
+        delete global.chrome;
+    });
 
-// tests
-describe('background page', function() {
+    describe('setBadge', function () {
 
-  // sometimes it takes time to start phantomjs
-  this.timeout(4000);
-
-  it('should display opened tabs in button badge', function(done) {
-    // #1. open empty page and inject chrome.* api mocks
-    page.open('test/empty.html', function() {
-      // #2. stub `chrome.tabs.query` to return pre-defined response
-      page.evaluate(function(tabs) {
-        chrome.tabs.query.yields(JSON.parse(tabs));
-      }, fs.read('test/data/tabs.query.json'));
-
-      // #3. run background js
-      page.injectJs('src/background.js');
-
-      // #4. assert that button badge equals to '2'
-      page.evaluate(function() {
-        sinon.assert.calledOnce(chrome.browserAction.setBadgeText);
-        sinon.assert.calledWithMatch(chrome.browserAction.setBadgeText, {
-            text: "2"
+        it('should call chrome api with correct args', function () {
+            assert.ok(chrome.browserAction.setIcon.notCalled, 'setIcon method not called');
+            assert.ok(chrome.browserAction.setBadgeText.calledOnce);
+            assert.ok(chrome.browserAction.setBadgeText.calledWithMatch({
+              text: '2'
+            }));
         });
-      });
-      done();
     });
-  });
-
 });
-
-// run
-mocha.run(function(failures) {
-  phantom.exit(failures);
-});
+// // 1. mock `chrome.tabs.query` to return predefined response
+// chrome.tabs.query.yields([
+//   {id: 1, title: 'Tab 1'},
+//   {id: 2, title: 'Tab 2'}
+// ]);
+//
+// // 2. inject our mocked chrome.* api into some environment
+// var context = {
+//   chrome: chrome
+// };
+//
+// // 3. run our extension code in this environment
+// var code = fs.readFileSync('app/scripts/background.js');
+// vm.runInNewContext(code, context);
+//
+// // 4. assert that button badge equals to '2'
+// assert.calledOnce(chrome.browserAction.setBadgeText);
+// assert.calledWithMatch(chrome.browserAction.setBadgeText, {
+//   text: "2"
+// });
