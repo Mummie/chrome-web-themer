@@ -17,12 +17,14 @@ class EditCtrl {
     _this.showEdit = '';
     _this.ContentScriptFactory = ContentScriptFactory;
     _this.cookies = $cookies;
+    _this.editElement = _this.cookies.getObject('lastEdit');
+    _this.editToggle = {};
     _this.lodash = lodash;
     _this.filters = {};
     _this.isWebpageInversed = false;
     _this.colorBlindFilter;
     _this.selectedGlobalPageFont;
-
+    console.log(_this.editElement);
     chrome.runtime.onConnect.addListener(function(port) {
 
       port.onMessage.addListener(function(err) {
@@ -30,6 +32,7 @@ class EditCtrl {
         Object.assign(_this.errorMessage, err);
       });
     });
+
 
     ContentScriptFactory.getCurrentURLEdits().then(edits => {
       if (!lodash.isEmpty(edits)) {
@@ -65,9 +68,14 @@ class EditCtrl {
   }
 
   triggerEditElementAction() {
+    const _this = this;
     this.ContentScriptFactory.triggerEditAction()
       .then(editedElement => {
-        console.log('edit', editedElement);
+        for (let key in Object.keys(editedElement)) {
+          _this.editToggle[key] = false;
+        }
+        this.cookies.putObject('lastEdit', editedElement);
+        _this.editElement = editedElement;
       });
   }
 
@@ -79,11 +87,12 @@ class EditCtrl {
       });
   }
 
-  changeBackgroundColor() {
+  changeBackgroundColor(element, color) {
     const _this = this;
     const colorObj = {
       command: 'changeColor',
-      color: _this.color
+      color,
+      element
     };
     chrome.tabs.getSelected(null, tab => {
       chrome.tabs.sendMessage(tab.id, colorObj);

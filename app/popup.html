@@ -97,6 +97,25 @@
 							id='edit-button' class='button-small pure-button'>
 								+ Edit
 							</button>
+							<div class="pure-u-1 pure-u-md-1-3" ng-if="ctrl.editElement">
+								<ul>
+									<li ng-repeat="(key, value) in ctrl.editElement">
+										<a class="show-filter"  ng-click="ctrl.editToggle[key] = !ctrl.editToggle[key]">{{key}}</a>
+										<div ng-show="ctrl.editToggle[key]">
+											<input type="text" class="txt-replace-input" ng-if="key == 'text'" value="{{ctrl.editElement.text}}" />
+											<input type="number" ng-if="key == 'height'" value="{{ctrl.editElement.height}}" />
+											<input
+												class="button-xsmall pure-button"
+												colorpicker
+												type="text" ng-model="ctrl.editElement.backgroundColor"
+												ng-style="{'background-color': ctrl.editElement.backgroundColor}"
+												ng-if="key == 'backgroundColor'"
+												ng-change="ctrl.changeBackgroundColor(ctrl.editElement.selector, ctrl.editElement.backgroundColor)"
+											 />
+										</div>
+									</li>
+								</ul>
+							</div>
 						</div>
 					</div>
 					<a class="show-filter" ng-click="ctrl.toggleNewEdit = !ctrl.toggleNewEdit"
@@ -133,7 +152,7 @@
 							<input class="button-xsmall pure-button"
 							colorpicker type="text" ng-model="ctrl.color"
 							ng-style="{'background-color': ctrl.color}"
-							ng-change="ctrl.changeBackgroundColor()"
+							ng-change="ctrl.changeBackgroundColor('body', ctrl.color)"
 							/>
 						</div>
 					</div>

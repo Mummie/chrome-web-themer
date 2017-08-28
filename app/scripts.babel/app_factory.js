@@ -11,6 +11,7 @@ app.factory('ContentScriptFactory', function($q, lodash) {
           deferred.reject(chrome.runtime.lastError);
         }
         deferred.resolve(clickedElement);
+        return true;
       });
     });
 

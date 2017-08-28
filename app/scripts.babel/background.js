@@ -7,24 +7,32 @@
 let saveEditToURL = (url, edit) => {
 
   chrome.storage.sync.get(url, pageEdits => {
-    console.log(JSON.stringify(edit));
-    console.log('page edits key length ', Object.keys(pageEdits).length);
-    let obj = {};
-    Object.getOwnPropertyNames(edit).forEach((prop, index) => {
-      obj[prop] = edit[prop];
-    });
 
     if (Object.keys(pageEdits).length < 1) {
       let saveEdit = {
-        [url]: edit
+        [url]: {
+          'edits': [edit]
+        }
       };
       chrome.storage.sync.set(saveEdit);
     }
 
     else {
-      pageEdits[url][edits].push(edit);
-      console.log(pageEdits[url]);
-      chrome.storage.sync.set(pageEdits[url]);
+      pageEdits[url].edits.find((e, i) => {
+        if(e.element === edit.element) {
+          pageEdits[url].edits[i].styles.push(edit);
+        }
+
+        else {
+          const stylesObject = {
+            element: edit.element,
+            styles: [edit]
+          };
+          pageEdits[url].edits.push(stylesObject);
+        }
+      });
+
+      chrome.storage.sync.set(pageEdits);
     }
   });
 }
@@ -34,5 +42,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     saveEditToURL(sender.tab.url, request.edit);
     return true;
   }
-
 });
