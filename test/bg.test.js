@@ -1,27 +1,37 @@
-var vm = require('vm');
-var fs = require('fs');
-var chrome = require('sinon-chrome');
-var assert = require('chai').assert;
-var background = require('../app/scripts.babel/background.js');
+import vm from 'vm';
+import fs from 'fs';
+import util from 'util';
+import sinon from 'sinon';
+import chrome from 'sinon-chrome';
+import {assert, expect, should} from 'chai';
+import background from '../app/scripts.babel/background.js';
 
-describe('background', function () {
+const url = 'chrome-extension://igchocapjlndhicdblddcdmfpbpbopml/popup.html';
+describe('background', () => {
 
-    before(function () {
-        global.chrome = chrome;
+  const sandbox = sinon.sandbox.create();
+  sandbox.stub(window.chrome.runtime, 'sendMessage');
+
+    before(() => {
+      global.chrome = chrome;
+      window.chrome = chrome;
     });
 
-    after(function () {
+    after(() => {
+        chrome.flush();
         delete global.chrome;
     });
 
-    describe('setBadge', function () {
+    it('should call send invalid message', () => {
 
-        it('should call chrome api with correct args', function () {
-            assert.ok(chrome.browserAction.setIcon.notCalled, 'setIcon method not called');
-            assert.ok(chrome.browserAction.setBadgeText.calledOnce);
-            assert.ok(chrome.browserAction.setBadgeText.calledWithMatch({
-              text: '2'
-            }));
-        });
+      assert.exists(background);
+      chrome.runtime.sendMessage({command: 'saveEdit', edit: 'test'}, response => {
+        assert.ok(sendResponse.calledOnce);
+        assert.equal(response, 'Edit Object passed is not valid', 'Background should return string of invalid object');
+      });
+      assert.ok(chrome.runtime.sendMessage.calledOnce, 'Chrome Mock Message Sent');
+      assert.ok(chrome.runtime.onMessage.addListener.calledOnce);
+      assert.isNotOk(chrome.storage.sync.get.calledOnce);
+      assert.isNotOk(chrome.webNavigation.onHistoryStateUpdated.addListener.calledOnce);
     });
 });
