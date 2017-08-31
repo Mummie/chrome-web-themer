@@ -4,9 +4,10 @@ import util from 'util';
 import sinon from 'sinon';
 import chrome from 'sinon-chrome';
 import {assert, expect, should} from 'chai';
-import background from '../app/scripts.babel/background.js';
+import background from '../app/scripts.babel/app.js';
 
-describe('background', () => {
+const url = 'chrome-extension://igchocapjlndhicdblddcdmfpbpbopml/popup.html';
+describe('app', () => {
 
   const sandbox = sinon.sandbox.create();
   sandbox.stub(window.chrome.runtime, 'sendMessage');
@@ -21,7 +22,7 @@ describe('background', () => {
         delete global.chrome;
     });
 
-    it('should send invalid message and fail', () => {
+    it('should call getAllEdits and return mock edit response', () => {
 
       assert.exists(background);
       chrome.runtime.sendMessage({command: 'saveEdit', edit: 'test'}, response => {

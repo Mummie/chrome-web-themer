@@ -1,6 +1,6 @@
 {
     "name": "Chrome Web Themer",
-    "version": "0.5.4",
+    "version": "0.5.9",
     "manifest_version": 2,
     "description": "__MSG_appDescription__",
     "icons": {
@@ -27,6 +27,7 @@
         "http://*/*",
         "https://*/*",
         "activeTab",
+        "webNavigation",
         "alarms",
         "storage"
     ],

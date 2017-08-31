@@ -20,6 +20,13 @@ let saveEditToURL = (url, edit) => {
     else {
       pageEdits[url].edits.find((e, i) => {
         if(e.element === edit.element) {
+          //TODO: add functionality so that if the new edit is already stored on the element, replace the saved value with the new one
+          pageEdits[url].edits[i].styles.find((s, j) => {
+            console.log(s);
+            if(edit === s) {
+              pageEdits[url].edits[i].styles.splice(j, 1);
+            }
+          });
           pageEdits[url].edits[i].styles.push(edit);
         }
 
@@ -37,9 +44,37 @@ let saveEditToURL = (url, edit) => {
   });
 }
 
+
+chrome.webNavigation.onHistoryStateUpdated.addListener(function() {
+  chrome.tabs.executeScript(null, { file: 'scripts/contentscript.js' });
+});
+
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.command === 'saveEdit') {
-    saveEditToURL(sender.tab.url, request.edit);
-    return true;
+    const isValid = isValidEditObject(request.edit);
+    console.log(isValid);
+
+    if(isValid) {
+      saveEditToURL(sender.tab.url, request.edit);
+      sendResponse(true);
+      return true;
+    }
+    sendResponse('Edit Object passed is not valid');
   }
 });
+
+function isValidEditObject(edit) {
+
+  const validStyleProps = ['color', 'backgroundColor', 'fontSize', 'fontFamily'];
+  const keys = Object.keys(edit);
+  if(keys.length < 2) {
+    return false;
+  }
+
+  if(!edit.hasOwnProperty('element')) {
+    return false;
+  }
+
+  return true;
+}

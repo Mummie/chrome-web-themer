@@ -24,7 +24,8 @@ class EditCtrl {
     _this.isWebpageInversed = false;
     _this.colorBlindFilter;
     _this.selectedGlobalPageFont;
-    console.log(_this.editElement);
+    //TODO: add message listener for when the EditElement changes and reflect it to
+    // the chrome app page
     chrome.runtime.onConnect.addListener(function(port) {
 
       port.onMessage.addListener(function(err) {
@@ -37,7 +38,6 @@ class EditCtrl {
     ContentScriptFactory.getCurrentURLEdits().then(edits => {
       if (!lodash.isEmpty(edits)) {
         _this.edits = lodash.assign({}, edits);
-        console.log(_this.edits);
         if (_this.edits.backgroundColor && _this.edits.backgroundColor.color) {
           _this.color = _this.edits.backgroundColor.color;
         }
@@ -64,6 +64,10 @@ class EditCtrl {
 
     $scope.inverseWebpage = () => {
       _this.inverseWebpage();
+    };
+
+    $scope.deleteEdit = (edit) => {
+      _this.deleteEdit(edit);
     };
   }
 
@@ -146,6 +150,10 @@ class EditCtrl {
         }
       });
     });
+  }
+
+  deleteEdit(edit) {
+    chrome.storage.remove(edit);
   }
 }
 

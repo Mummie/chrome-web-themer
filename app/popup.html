@@ -11,6 +11,7 @@
 	<link rel="stylesheet" href="bower_components/angular-bootstrap-colorpicker/css/colorpicker.min.css"
 	/>
 	<link rel="stylesheet" href="bower_components/angular-fontselect/dist/angular-fontselect.min.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 
 	<script src="bower_components/angular/angular.js"></script>
@@ -70,7 +71,7 @@
 							</div>
 							<div ng-if="ctrl.showEdits">
 								<ul ng-repeat="edit in ctrl.edits">
-									<li>{{edit}}</li>
+									<li>{{edit}} <span class="fa fa-close"></span></li>
 								</ul>
 							</div>
 							<p ng-if="!ctrl.edits">

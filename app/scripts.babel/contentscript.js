@@ -35,6 +35,8 @@ errorObserver.observe(errorProxy, {
   attributes: true
 });
 
+const url = window.location.href;
+
 const $ = e => document.querySelector(e);
 
 const $$ = e => document.querySelectorAll(e);
@@ -42,6 +44,32 @@ const $$ = e => document.querySelectorAll(e);
 const errPort = chrome.runtime.connect({
   name: "errChannel"
 });
+
+let editObserver = new MutationObserver(mutations => {
+  mutations.forEach(mutation => {
+    const previousElement = {
+      mutation: mutation,
+      element: mutation.target,
+      text: mutation.target.textContent,
+      color: mutation.target.style.color,
+      backgroundColor: mutation.target.style.backgroundColor,
+      oldValue: mutation.oldValue
+    };
+    console.log('DOM change detected: ', previousElement);
+  });
+});
+
+function runObserverWhenContextMenuInjected() {
+  const contextMenuDOM = $('.context-menu');
+  if(!contextMenuDOM) {
+    window.setTimeout(runObserverWhenContextMenuInjected, 500);
+    return;
+  }
+  const editObserverConfig = { attributes: true, childList: true, subtree: true , characterData: true };
+  editObserver.observe(contextMenuDOM, editObserverConfig);
+}
+
+runObserverWhenContextMenuInjected();
 
 // map takes a function argument that will be executed to each item in 2nd argument array
 // ex map(x => x * x, [1, 3, 4, 10]) returns [ 1, 9, 16, 100 ]
@@ -69,25 +97,35 @@ function injectCSS(filepath) {
 }
 
 injectCSS('styles/inject.css');
-const url = window.location.href;
 const originalPageStyles = {
   cursor: $('body').style.cursor,
   pageSource: $('body').innerHTML
 };
 
-let EditElement = null;
 let editedPageStyles = null;
+
+const handler = {
+  set(target, key, value) {
+    console.log(`Setting value ${key} as ${value}`)
+    target[key] = value;
+    //TODO send Message to app.js that will show edit element on edit element app view
+  },
+};
+
+let EditElement = new Proxy({}, handler);
 
 chrome.storage.sync.get(url, edits => {
   try {
     let e = edits[url];
-    console.log(`edits for url${JSON.stringify(e)}`);
     if (e) {
       editedPageStyles = e;
       if (e['edits']) {
         map(edit => {
           console.log(edit);
-          if (edit.newText) {
+          if($(edit.path) === null) {
+            throw ('Invalid Element', edit);
+          }
+          if (edit.newText && 'textContent' in $(edit.path)) {
             $(edit.path).textContent = edit.newText;
           }
 
@@ -95,7 +133,14 @@ chrome.storage.sync.get(url, edits => {
             edit.styles.forEach(obj => {
               Object.getOwnPropertyNames(obj).forEach((prop, index) => {
                 if(edit.path) {
-                  $(edit.path).style[prop] = obj[prop];
+
+                  if(edit.path === '*') {
+                    map(elem =>  { elem.style[prop] = obj[prop] }, $$(edit.element));
+                  }
+
+                  else {
+                    $(edit.path).style[prop] = obj[prop];
+                  }
                 }
                 else {
                   $(edit.element).style[prop] = obj[prop];
@@ -118,10 +163,12 @@ chrome.storage.sync.get(url, edits => {
     }
   }
   catch (e) {
-    errPort.postMessage(e);
+    console.error(e);
   }
 });
 
+// Messages coming from the app will be sent to this listener and call functions
+// depending on what the user has triggered. Text replacements, font changes, clicking Add Edit etc
 chrome.runtime.onMessage.addListener((req, sender, res) => {
   switch (req.command) {
     case "textReplace":
@@ -166,15 +213,9 @@ chrome.runtime.onMessage.addListener((req, sender, res) => {
         });
 
         $('body:not(.chrome-web-themer-overlay):not(.chrome-themer-popup-menu):not(.context-menu)').addEventListener('contextmenu', function(e) {
-          e.preventDefault();
-          const clickedElement = editClickHandler(e);
-          if (clickedElement != 'undefined' || null) {
-            res(clickedElement);
-            return false;
-          }
-
-          return true;
-        });
+          let elem = editClickHandler(e);
+          res(elem);
+        }, false);
         return true;
       } catch (e) {
         console.error(e);
@@ -244,12 +285,10 @@ function findAndReplaceText(textToFind, textToReplace) {
 }
 
 //TODO: check if shadow dom context menu already exists on page, and on each click remove it so that theres only 1 shadow element
+// editClickHandler will build the edit object from the clicked elements' styles, dom path and assign the newly defined object to global EditElement
+// will also inject HTML of context menu and append to the clicked element
 function editClickHandler(e) {
-  e.stopPropagation();
-  if (e.default || EditElement == e.target) {
-    return;
-  }
-  console.log($('.context-menu'));
+  e.preventDefault();
   if($('.chrome-themer-popup-menu'))  {
     $('.chrome-themer-popup-menu').remove();
   }
@@ -257,36 +296,27 @@ function editClickHandler(e) {
   // i.e cannot use contextMenu's changeText handler on an element that doesn't contain text
   // need to have contextMenu init have the ability to say which events should be called for element
   e = e || window.event;
-  const target = e.target || e.srcElement;
-  const text = target.textContent;
-  const selector = getDomPath(target);
-  const currentCSS = window.getComputedStyle(target);
-  const color = currentCSS.getPropertyValue('color');
-  const backgroundColor = currentCSS.getPropertyValue('background-color');
-  const height = parseInt(currentCSS.getPropertyValue('height'), 10); // using parseInt to get rid of 'px' at the end
-  const width = parseInt(currentCSS.getPropertyValue('width'), 10);
-  const fontFamily = target.style.fontFamily;
-  const fontSize = currentCSS.getPropertyValue('font-size');
-  if (target instanceof Element && selector != 'undefined' || '') {
-    const clickedElement = {
-      'element': target.tagName.toUpperCase(),
-      text,
-      target,
-      'id': target.id,
-      'class': target.className,
-      selector,
-      color,
-      backgroundColor,
-      height,
-      width,
-      fontFamily,
-      fontSize
-    };
+  let clickedElement = {};
+
+  if (e.target instanceof Element && getDomPath(e.target) != 'undefined' || '') {
+
+    clickedElement.target = e.target || e.srcElement;
+    if(clickedElement.target.hasOwnProperty('textContent')) {
+      clickedElement.text = e.target.textContent;
+    }
+    clickedElement.path = getDomPath(e.target);
+    clickedElement.currentCSS = window.getComputedStyle(e.target);
+    clickedElement.color = clickedElement.currentCSS.getPropertyValue('color');
+    clickedElement.backgroundColor = clickedElement.currentCSS.getPropertyValue('background-color');
+    clickedElement.height = parseInt(clickedElement.currentCSS.getPropertyValue('height'), 10); // using parseInt to get rid of 'px' at the end
+    clickedElement.width = parseInt(clickedElement.currentCSS.getPropertyValue('width'), 10);
+    clickedElement.fontFamily = e.target.style.fontFamily;
+    clickedElement.fontSize = clickedElement.currentCSS.getPropertyValue('font-size');
 
     EditElement = clickedElement;
-    target.className += ' context-menu';
+    e.target.className += ' context-menu';
     console.log(clickedElement);
-    console.log(color, width);
+    console.log(clickedElement.color, clickedElement.width);
     let ctxtMenu = contextMenu(clickedElement);
     return clickedElement;
   }
@@ -337,102 +367,9 @@ function makeCursor() {
 }
 
 }
-
-class ContextMenu extends HTMLElement {
-
-  constructor() {
-    super();
-  }
-
-  connectedCallback() {
-    this.initShadowDOM();
-    this.addInputListener();
-  }
-
-  initShadowDOM() {
-    let shadowRoot = this.attachShadow({
-      mode: 'open'
-    });
-    shadowRoot.innerHTML = this.template;
-  }
-
-  addInputListener() {
-    this.changeTextNode.addEventListener('input', e => {
-      const newText = e.target.value;
-      if (newText.length > 0) {
-        $(EditElement.path).text(newText);
-      }
-    });
-
-    this.changeColorNode.addEventListener('input', e => {
-      let _this = this;
-      ColorPicker(this, hex => {
-        if (_this.isBackground) {
-          $(EditElement.path).style.backgroundColor = hex;
-        } else {
-          $(EditElement.path).style.color = hex;
-        }
-      });
-    });
-  }
-
-  get changeTextNode() {
-    return this.shadowRoot.querySelector('.chrome-web-themer-edit-text');
-  }
-
-  get changeColorNode() {
-    return this.shadowRoot.querySelector('.chrome-web-themer-change-color');
-  }
-
-  get template() {
-    return `<nav class="chrome-themer-popup-menu" id="edit-popup-menu " role="navigation">
-      <ul class="nav__list">
-          <li>
-              <input id="group-1" type="checkbox" hidden
-              />
-              <label for="group-1"><span class="fa fa-angle-right"></span>				First level</label>
-              <ul class="group-list">
-                  <li>
-                      <input type='text' class='chrome-web-themer-edit-text'
-                      />
-                      <label for='new-element-text'>New Text: </label>
-                  </li>
-          <li>
-            <input class='chrome-web-themer-change-color jscolor' value />
-          </li>
-                  <li>
-                      <input id="sub-group-1" type="checkbox" hidden
-                      />
-                      <label for="sub-group-1"><span class="fa fa-angle-right"></span>						Second level</label>
-                      <ul class="sub-group-list">
-                          <li><a href="#">2nd level nav item</a>
-                          </li>
-                          <li><a href="#">2nd level nav item</a>
-                          </li>
-                          <li><a href="#">2nd level nav item</a>
-                          </li>
-                          <li>
-                              <input id="sub-sub-group-1" type="checkbox"
-                              hidden />
-                              <label for="sub-sub-group-1"><span class="fa fa-angle-right"></span>								Third level</label>
-                              <ul class="sub-sub-group-list">
-                                  <li><a href="#">3rd level nav item</a>
-                                  </li>
-                                  <li><a href="#">3rd level nav item</a>
-                                  </li>
-                                  <li><a href="#">3rd level nav item</a>
-                                  </li>
-                              </ul>
-                          </li>
-                      </ul>
-                  </li>
-              </ul>
-      </ul>
-  </nav>
-  `;
-  }
-}
-
+//TODO: build HTML context menu based on the props of hostElement
+//for any change made through the context menu, the event listener will need to build the edit object and append to an array for all applied
+// styles and edits
 const contextMenu = hostElement => {
   const shadowHost = $(hostElement.selector).createShadowRoot();
   const template = document.createElement('template');
@@ -472,6 +409,7 @@ const contextMenu = hostElement => {
    nav a,
    .nav label {
     padding: .85rem;
+    cursor: pointer;
     color: #fff;
     background-color: #151515;
     box-shadow: inset 0 -1px #1d1d1d;
@@ -540,7 +478,7 @@ const contextMenu = hostElement => {
     transition: max-height .5s ease-in-out;
   }
 
-   .nav__list input[type=checkbox]:checked + label + ul {
+   .nav__list a:active + label + ul {
     /* reset the height when checkbox is checked */
     max-height: 1000px;
   }
@@ -548,15 +486,14 @@ const contextMenu = hostElement => {
   <nav class="chrome-themer-popup-menu" id="edit-popup-menu " role="navigation">
   <ul class="nav__list">
     <li>
-      <input id="group-1" name="group-1" type="checkbox" hidden />
-      <label for="group-1"><span class="fa fa-angle-right"></span>Colors</label>
+      <a href>Colors</a>
       <ul class="group-list">
         <li>
           <label for="changeColor">Change Color</label>
-          <input name="changeColor" class='chrome-web-themer-change-color jscolor {position: 'right'}' value="abs567" />
+          <input name="changeColor" class='chrome-web-themer-change-color jscolor' value="${hostElement.color}" />
         </li>
         <li>
-          <input name="sub-group-1" id="sub-group-1" type="checkbox" hidden />
+          <input name="sub-group-1" id="sub-group-1" type="checkbox" />
           <label for="sub-group-1"><span class="fa fa-angle-right"></span> Second level</label>
           <ul class="sub-group-list">
             <li><a href="#">2nd level nav item</a>
@@ -576,7 +513,7 @@ const contextMenu = hostElement => {
           <label for='chrome-web-themer-edit-text'>New Text: </label>
         </li>
       </ul>
-      <input name="group-3" id="group-3" type="checkbox" hidden />
+      <input name="group-3" id="group-3" type="checkbox" />
       <label for="group-3"><span class="fa fa-angle-right"></span>Size</label>
       <ul class="group-list">
         <li>
@@ -594,26 +531,30 @@ const contextMenu = hostElement => {
   console.log(shadowHost);
   shadowHost.appendChild(template.content);
 
+  console.log('node type of context menu host element ', hostElement.nodeType);
+
   shadowHost.querySelector('.chrome-web-themer-change-color').addEventListener('change', e => {
-    console.log(e);
-    console.log(e.target.value);
-    $(hostElement.selector).style.backgroundColor = `#${e}`;
-    if($(hostElement.selector).style.backgroundColor === `#${e}`) {
-      EditElement.backgroundColor = `#${e}`;
+    const color = `#${e}`;
+    $(hostElement.selector).style.backgroundColor = color;
+    if($(hostElement.selector).style.backgroundColor === color) {
+      EditElement.backgroundColor = color;
     }
     return false;
   });
 
-  shadowHost.querySelector('.chrome-web-themer-edit-text').addEventListener('change', e => {
-    const newText = e.target.value;
-    if (newText.length > 0) {
-      $(hostElement.selector).textContent = newText;
-      if($(hostElement.selector).textContent === newText) {
-        EditElement.textContent = newText;
+
+  if($(hostElement.selector).textContent.length > 0) {
+    shadowHost.querySelector('.chrome-web-themer-edit-text').addEventListener('change', e => {
+      const newText = e.target.value;
+      if (newText.length > 0) {
+        $(hostElement.selector).textContent = newText;
+        if($(hostElement.selector).textContent === newText) {
+          EditElement.textContent = newText;
+        }
       }
-    }
-    return false;
-  });
+      return false;
+    });
+  }
 
   shadowHost.querySelector('.chrome-web-themer-change-width').addEventListener('change', e => {
     const newWidth = e.target.value;
@@ -642,7 +583,6 @@ const contextMenu = hostElement => {
 
 const EditMode = {
 
-  edit: this,
   init() {
     this.bindEventHandlers();
   },
@@ -652,7 +592,6 @@ const EditMode = {
     }
   },
   bindEvent(e) {
-    console.log(e.$el);
     if (isNodeList(e.$el)) {
       [].forEach.call(e.$el, elem => {
         elem.addEventListener(e.event, e.handler, false)
