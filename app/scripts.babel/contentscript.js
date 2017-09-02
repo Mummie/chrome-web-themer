@@ -48,7 +48,7 @@ const errPort = chrome.runtime.connect({
 let editObserver = new MutationObserver(mutations => {
   mutations.forEach(mutation => {
     const previousElement = {
-      mutation: mutation,
+      mutation,
       element: mutation.target,
       text: mutation.target.textContent,
       color: mutation.target.style.color,
@@ -59,14 +59,25 @@ let editObserver = new MutationObserver(mutations => {
   });
 });
 
+// editedPageStyles contains an array of the edits a user has currently made before saving to chrome storage
+let editedPageStyles = new WeakMap();
+let EditElement = {};
+
 function runObserverWhenContextMenuInjected() {
   const contextMenuDOM = $('.context-menu');
-  if(!contextMenuDOM) {
+  if (!contextMenuDOM) {
     window.setTimeout(runObserverWhenContextMenuInjected, 500);
     return;
   }
-  const editObserverConfig = { attributes: true, childList: true, subtree: true , characterData: true };
+  const editObserverConfig = {
+    attributes: true,
+    childList: true,
+    subtree: true,
+    characterData: true
+  };
   editObserver.observe(contextMenuDOM, editObserverConfig);
+  let EditElementProxy = new Proxy(EditElement, handler);
+
 }
 
 runObserverWhenContextMenuInjected();
@@ -85,7 +96,6 @@ function injectScript(filepath) {
 }
 
 injectScript('scripts/jscolor.min.js');
-injectScript('scripts/custom-elements-es5-adapter.js');
 
 function injectCSS(filepath) {
   const cssPath = chrome.extension.getURL(filepath);
@@ -97,59 +107,73 @@ function injectCSS(filepath) {
 }
 
 injectCSS('styles/inject.css');
+
 const originalPageStyles = {
   cursor: $('body').style.cursor,
   pageSource: $('body').innerHTML
 };
 
-let editedPageStyles = null;
-
 const handler = {
   set(target, key, value) {
     console.log(`Setting value ${key} as ${value}`)
+    chrome.runtime.sendMessage({
+      command: 'clickedEdit',
+      edit: target
+    });
     target[key] = value;
     //TODO send Message to app.js that will show edit element on edit element app view
   },
 };
 
-let EditElement = new Proxy({}, handler);
+
+// getContextMenuHTML will retrieve the html of the contextmenu and assign nodevalues based on the keys pf element
+function getContextMenuHTML(element) {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({
+      command: 'getContextMenuHTML',
+      element
+    }, res => {
+      resolve(res);
+    });
+  });
+}
+
 
 chrome.storage.sync.get(url, edits => {
   try {
     let e = edits[url];
-    if (e) {
-      editedPageStyles = e;
-      if (e['edits']) {
-        map(edit => {
-          console.log(edit);
-          if($(edit.path) === null) {
-            throw ('Invalid Element', edit);
-          }
-          if (edit.newText && 'textContent' in $(edit.path)) {
-            $(edit.path).textContent = edit.newText;
-          }
+    if (e && e['edits']) {
+      map(edit => {
+        console.log(edit);
+        if ($(edit.path) === null) {
+          throw ('Invalid Element', edit);
+        }
+        if (edit.newText && 'textContent' in $(edit.path)) {
+          $(edit.path).textContent = edit.newText;
+        }
 
-          if (edit.styles && edit.styles.length > 0) {
-            edit.styles.forEach(obj => {
-              Object.getOwnPropertyNames(obj).forEach((prop, index) => {
-                if(edit.path) {
+        if (edit.styles && edit.styles.length > 0) {
+          edit.styles.forEach(obj => {
+            Object.getOwnPropertyNames(obj).forEach((prop, index) => {
+              //if the edit is tied to a specific element, it should have a path to the element
+              // if not, the edit is applied to multiple elements ex all a tags
+              if (edit.path) {
 
-                  if(edit.path === '*') {
-                    map(elem =>  { elem.style[prop] = obj[prop] }, $$(edit.element));
-                  }
-
-                  else {
-                    $(edit.path).style[prop] = obj[prop];
-                  }
+                if (edit.path === '*') {
+                  map(elem => {
+                    elem.style[prop] = obj[prop]
+                  }, $$(edit.element));
+                } else {
+                  $(edit.path).style[prop] = obj[prop];
                 }
-                else {
-                  $(edit.element).style[prop] = obj[prop];
-                }
-              });
+              } else {
+                $(edit.element).style[prop] = obj[prop];
+              }
             });
-          }
-        }, e['edits']);
-      }
+          });
+        }
+      }, e['edits']);
+
 
       if (e['fontFamily']) {
         $('body').style.fontFamily = e['fontFamily'].font;
@@ -161,9 +185,9 @@ chrome.storage.sync.get(url, edits => {
         }
       }
     }
-  }
-  catch (e) {
+  } catch (e) {
     console.error(e);
+    port.postMessage(e);
   }
 });
 
@@ -201,8 +225,7 @@ chrome.runtime.onMessage.addListener((req, sender, res) => {
       }
       break;
     case 'editEvent':
-      //TODO: use async functions to return promise of clicked element, save edits
-      // then resolve when user clicks submit or something
+
       try {
         EditMode.init();
         $('body').addEventListener('keyup', e => {
@@ -212,10 +235,16 @@ chrome.runtime.onMessage.addListener((req, sender, res) => {
           }
         });
 
-        $('body:not(.chrome-web-themer-overlay):not(.chrome-themer-popup-menu):not(.context-menu)').addEventListener('contextmenu', function(e) {
-          let elem = editClickHandler(e);
-          res(elem);
-        }, false);
+        let checkEditClick = setInterval(() => {
+          if (EditElement && Object.keys(EditElement).length > 1) {
+            console.log('Received Edit ',EditElement);
+            res(EditElement);
+            clearInterval(checkEditClick);
+          } else {
+            console.log('Edit Element hasnt been initialized yet');
+          }
+        }, 3000);
+
         return true;
       } catch (e) {
         console.error(e);
@@ -289,21 +318,15 @@ function findAndReplaceText(textToFind, textToReplace) {
 // will also inject HTML of context menu and append to the clicked element
 function editClickHandler(e) {
   e.preventDefault();
-  if($('.chrome-themer-popup-menu'))  {
-    $('.chrome-themer-popup-menu').remove();
-  }
-  // todo: determine the kind of edit events that can be bound to clicked element
-  // i.e cannot use contextMenu's changeText handler on an element that doesn't contain text
-  // need to have contextMenu init have the ability to say which events should be called for element
+
   e = e || window.event;
   let clickedElement = {};
+  let editmode = new editMode();
 
   if (e.target instanceof Element && getDomPath(e.target) != 'undefined' || '') {
 
     clickedElement.target = e.target || e.srcElement;
-    if(clickedElement.target.hasOwnProperty('textContent')) {
-      clickedElement.text = e.target.textContent;
-    }
+    clickedElement.text = e.target.textContent;
     clickedElement.path = getDomPath(e.target);
     clickedElement.currentCSS = window.getComputedStyle(e.target);
     clickedElement.color = clickedElement.currentCSS.getPropertyValue('color');
@@ -315,8 +338,7 @@ function editClickHandler(e) {
 
     EditElement = clickedElement;
     e.target.className += ' context-menu';
-    console.log(clickedElement);
-    console.log(clickedElement.color, clickedElement.width);
+    editmode.sendMessage(clickedElement);
     let ctxtMenu = contextMenu(clickedElement);
     return clickedElement;
   }
@@ -339,6 +361,51 @@ function getDomPath(el) {
     }
   }
   return names.join(" > ");
+}
+
+/*
+ * Publish/Subscribe Pattern
+ */
+class PubSub {
+  constructor() {
+    this.handlers = [];
+  }
+
+  subscribe(event, handler, context) {
+    if (typeof context === 'undefined') {
+      context = handler;
+    }
+    this.handlers.push({
+      event,
+      handler: handler.bind(context)
+    });
+  }
+
+  publish(event, args) {
+    this.handlers.forEach(topic => {
+      if (topic.event === event) {
+        topic.handler(args)
+      }
+    });
+  }
+}
+
+//TODO: use subscribe class to send messages on element changes to subscriber which will be sent to background
+class editMode {
+  constructor() {
+    this.pubsub = new PubSub();
+    this.pubsub.subscribe('message', this.emitMessage, this);
+  }
+
+  emitMessage(msg) {
+    console.group('PubSub');
+    console.log('user sent message!', msg);
+    console.groupEnd();
+  }
+
+  sendMessage(msg) {
+    this.pubsub.publish('message', msg);
+  }
 }
 
 // todo: need to set color variable to be a linear gradient that transitions the color pallete from background-y to default color i.e white
@@ -364,218 +431,72 @@ function makeCursor() {
       ctx.stroke();
       document.body.style.cursor = `url(${cursor.toDataURL()}), auto`;
     }
-}
+  }
 
 }
 //TODO: build HTML context menu based on the props of hostElement
 //for any change made through the context menu, the event listener will need to build the edit object and append to an array for all applied
 // styles and edits
 const contextMenu = hostElement => {
-  const shadowHost = $(hostElement.selector).createShadowRoot();
+  const shadowHost = $(hostElement.path).createShadowRoot();
   const template = document.createElement('template');
-  template.innerHTML = `
-  <style>
-   .chrome-themer-popup-menu {
-    z-index: 9999;
-    position: fixed;
-    width: 270px;
-    background-color: black;
-    top: 0;
-    margin-left: 200px;
-  }
+  template.className = 'context-menu';
 
-   ul {
-    list-style: none;
-  }
+  // sends message to background script that responds with the html content of the context menu
+  //TODO use async await for getContextMenu to avoid throwing everything in the callback
+  getContextMenuHTML(hostElement)
+    .then(html => {
+      console.log(html);
+      template.innerHTML = html;
+    }).then(() => {
+      shadowHost.appendChild(template.content);
 
-   ul li {
-    list-style: none;
-    color: #FFF;
-  }
+      shadowHost.querySelectorAll('input').forEach(i => {
+        i.addEventListener('click', e => {
+          console.log(e);
+          console.log('clicked', e.target);
+        });
+      });
 
-   ul li label {
-     display: block;
-    cursor: pointer;
-  }
-
-  input[type="checkbox"] {
-    width: 60px;
-    height: 60px;
-    cursor: pointer;
-    -webkit-appearance: none;
-    appearance: none;
-  }
-
-   nav a,
-   .nav label {
-    padding: .85rem;
-    cursor: pointer;
-    color: #fff;
-    background-color: #151515;
-    box-shadow: inset 0 -1px #1d1d1d;
-    -webkit-transition: all .25s ease-in;
-    transition: all .25s ease-in;
-  }
-
-   .nav a:focus,
-   .nav a:hover,
-   .nav label:focus,
-   .nav label:hover {
-    color: rgba(255, 255, 255, 0.5);
-    background: #030303;
-  }
-
-   .group-list a,
-   .group-list label {
-    padding-left: 2rem;
-    background: #252525;
-    box-shadow: inset 0 -1px #373737;
-  }
-
-   .group-list a:focus,
-   .group-list a:hover,
-   .group-list label:focus,
-   .group-list label:hover {
-    background: #131313;
-  }
-
-   .sub-group-list a,
-   .sub-group-list label {
-    padding-left: 4rem;
-    background: #353535;
-    box-shadow: inset 0 -1px #474747;
-  }
-
-   .sub-group-list a:focus,
-   .sub-group-list a:hover,
-   .sub-group-list label:focus,
-   .sub-group-list label:hover {
-    background: #232323;
-    cursor: pointer;
-  }
-
-   .sub-sub-group-list a,
-   .sub-sub-group-list label {
-    padding-left: 6rem;
-    background: #454545;
-    box-shadow: inset 0 -1px #575757;
-  }
-
-   .sub-sub-group-list a:focus,
-   .sub-sub-group-list a:hover,
-   .sub-sub-group-list label:focus,
-   .sub-sub-group-list label:hover {
-    background: #333333;
-  }
-
-   .group-list,
-   .sub-group-list,
-   .sub-sub-group-list {
-    height: 100%;
-    max-height: 0;
-    overflow: hidden;
-    -webkit-transition: max-height .5s ease-in-out;
-    transition: max-height .5s ease-in-out;
-  }
-
-   .nav__list a:active + label + ul {
-    /* reset the height when checkbox is checked */
-    max-height: 1000px;
-  }
-  </style>
-  <nav class="chrome-themer-popup-menu" id="edit-popup-menu " role="navigation">
-  <ul class="nav__list">
-    <li>
-      <a href>Colors</a>
-      <ul class="group-list">
-        <li>
-          <label for="changeColor">Change Color</label>
-          <input name="changeColor" class='chrome-web-themer-change-color jscolor' value="${hostElement.color}" />
-        </li>
-        <li>
-          <input name="sub-group-1" id="sub-group-1" type="checkbox" />
-          <label for="sub-group-1"><span class="fa fa-angle-right"></span> Second level</label>
-          <ul class="sub-group-list">
-            <li><a href="#">2nd level nav item</a>
-            </li>
-            <li><a href="#">2nd level nav item</a>
-            </li>
-            <li><a href="#">2nd level nav item</a>
-            </li>
-          </ul>
-        </li>
-      </ul>
-      <input name="group-2" id="group-2" type="checkbox" hidden />
-      <label for="group-2"><span class="fa fa-angle-right"></span>Text</label>
-      <ul class="group-list">
-        <li>
-          <input type='text' class='chrome-web-themer-edit-text' value="${hostElement.text}" />
-          <label for='chrome-web-themer-edit-text'>New Text: </label>
-        </li>
-      </ul>
-      <input name="group-3" id="group-3" type="checkbox" />
-      <label for="group-3"><span class="fa fa-angle-right"></span>Size</label>
-      <ul class="group-list">
-        <li>
-          <input type='number' name="chrome-web-themer-change-width" class='chrome-web-themer-change-width' value="${hostElement.width}" />
-          <label for='chrome-web-themer-change-width'>Change Width</label>
-        </li>
-        <li>
-          <input type='number' class='chrome-web-themer-change-height' value="${hostElement.height}" />
-          <label for='chrome-web-themer-change-height'>Change Height</label>
-        </li>
-      </ul>
-  </ul>
-</nav>
-`;
-  console.log(shadowHost);
-  shadowHost.appendChild(template.content);
-
-  console.log('node type of context menu host element ', hostElement.nodeType);
-
-  shadowHost.querySelector('.chrome-web-themer-change-color').addEventListener('change', e => {
-    const color = `#${e}`;
-    $(hostElement.selector).style.backgroundColor = color;
-    if($(hostElement.selector).style.backgroundColor === color) {
-      EditElement.backgroundColor = color;
-    }
-    return false;
-  });
-
-
-  if($(hostElement.selector).textContent.length > 0) {
-    shadowHost.querySelector('.chrome-web-themer-edit-text').addEventListener('change', e => {
-      const newText = e.target.value;
-      if (newText.length > 0) {
-        $(hostElement.selector).textContent = newText;
-        if($(hostElement.selector).textContent === newText) {
-          EditElement.textContent = newText;
+      shadowHost.querySelector('.chrome-web-themer-change-color').addEventListener('change', e => {
+        e.stopPropagation();
+        const color = `#${e}`;
+        $(hostElement.path).style.backgroundColor = color;
+        if ($(hostElement.path).style.backgroundColor === color) {
+          EditElement.backgroundColor = color;
         }
+      });
+
+      if ($(hostElement.path).textContent.length > 0) {
+        shadowHost.querySelector('.chrome-web-themer-edit-text').addEventListener('keyup', e => {
+          const newText = e.target.value;
+          if (newText.length > 0) {
+            $(hostElement.path).textContent = newText;
+            if ($(hostElement.path).textContent === newText) {
+              EditElement.textContent = newText;
+            }
+          }
+        });
       }
-      return false;
+
+      shadowHost.querySelector('.chrome-web-themer-change-width').addEventListener('change', e => {
+        const newWidth = e.target.value;
+        $(hostElement.path).style.width = newWidth;
+        console.log(newWidth);
+        console.log($(hostElement.path).style.width);
+        if ($(hostElement.path).style.width === newWidth) {
+          EditElement.width = newWidth;
+        }
+      }, false);
+
+      shadowHost.querySelector('.chrome-web-themer-change-height').addEventListener('change', e => {
+        const newHeight = e.target.value;
+        $(hostElement.path).style.height = newHeight;
+        if ($(hostElement.path).style.height === newHeight) {
+          EditElement.height = newHeight;
+        }
+      }, false);
     });
-  }
-
-  shadowHost.querySelector('.chrome-web-themer-change-width').addEventListener('change', e => {
-    const newWidth = e.target.value;
-    $(hostElement.selector).style.width = newWidth;
-    console.log(newWidth);
-    console.log($(hostElement.selector).style.width);
-    if($(hostElement.selector).style.width === newWidth) {
-      EditElement.width = newWidth;
-    }
-    return false;
-  });
-
-  shadowHost.querySelector('.chrome-web-themer-change-height').addEventListener('change', e => {
-    const newHeight = e.target.value;
-    $(hostElement.selector).style.height = newHeight;
-    if($(hostElement.selector).style.height === newHeight) {
-      EditElement.height = newHeight;
-    }
-    return false;
-  });
-
 
   return shadowHost;
 };
@@ -605,6 +526,8 @@ const EditMode = {
     for (let i = 0; i < this.eventHandlers.length; i++) {
       this.removeEvent(this.eventHandlers[i]);
     }
+    let overlay = $('.chrome-web-themer-overlay');
+    overlay.className = overlay.className.replace('chrome-web-themer-overlay', '');
   },
   removeEvent(e) {
     if (isNodeList(e.$el)) {
@@ -633,10 +556,15 @@ const EditMode = {
       event: 'mouseout',
       handler(e) {
         const re = new RegExp("(^|\\s)" + 'chrome-web-themer-overlay' + "(\\s|$)", "g");
-        if(e.target.className) {
+        if (e.target.className) {
           e.target.className = e.target.className.replace(re, "$1").replace(/\s+/g, " ").replace(/(^ | $)/g, "");
         }
       }
+    },
+    {
+      $el: $('body:not(.chrome-web-themer-overlay):not(.chrome-themer-popup-menu):not(.context-menu)'),
+      event: 'contextmenu',
+      handler: editClickHandler
     }
   ]
 };

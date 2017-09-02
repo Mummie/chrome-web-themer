@@ -19,6 +19,7 @@
 	<script src="bower_components/angular-cookies/angular-cookies.min.js"></script>
 	<script src="bower_components/ng-lodash/build/ng-lodash.min.js"></script>
 	<script src="bower_components/angular-fontselect/dist/angular-fontselect.min.js"></script>
+	<script src="bower_components/chrome-extension-async/chrome-extension-async.js"></script>
 	<script src="bower_components/angular-bootstrap-colorpicker/js/bootstrap-colorpicker-module.min.js"></script>
 	<script src="scripts/popup.js"></script>
 	<script src="scripts/app_factory.js"></script>
@@ -105,6 +106,7 @@
 										<div ng-show="ctrl.editToggle[key]">
 											<input type="text" class="txt-replace-input" ng-if="key == 'text'" value="{{ctrl.editElement.text}}" />
 											<input type="number" ng-if="key == 'height'" value="{{ctrl.editElement.height}}" />
+											<input type="number" ng-if="key == 'width'" value="{{ctrl.editElement.width}}" />
 											<input
 												class="button-xsmall pure-button"
 												colorpicker

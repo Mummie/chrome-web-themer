@@ -1,12 +1,15 @@
 {
     "name": "Chrome Web Themer",
-    "version": "0.5.9",
+    "version": "0.6.2",
     "manifest_version": 2,
     "description": "__MSG_appDescription__",
     "icons": {
         "128": "images/chrome_web_themer_icon.png"
     },
     "default_locale": "en",
+    "sandbox": {
+      "pages": ["scripts/context_menu.html"]
+    },
     "background": {
         "scripts": [
             "scripts/chromereload.js",
@@ -18,9 +21,10 @@
         "run_at": "document_end",
         "matches": ["http://*/*", "https://*/*"],
         "js": ["scripts/jscolor.min.js", "scripts/contentscript.js"],
-        "css": ["styles/inject.css"]
+        "css": ["styles/inject.css"],
+        "all_frames": true
     }],
-    "web_accessible_resources": ["scripts/custom-elements-es5-adapter.js", "scripts/context_menu.html", "scripts/jscolor.min.js", "scripts/contentscript.js", "styles/inject.css"],
+    "web_accessible_resources": ["scripts/context_menu.html", "scripts/jscolor.min.js", "scripts/contentscript.js", "styles/inject.css"],
     "permissions": [
         "tabs",
         "background",

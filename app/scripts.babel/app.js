@@ -24,8 +24,10 @@ class EditCtrl {
     _this.isWebpageInversed = false;
     _this.colorBlindFilter;
     _this.selectedGlobalPageFont;
-    //TODO: add message listener for when the EditElement changes and reflect it to
-    // the chrome app page
+    //TODO: use chrome-extension-async for async/await instead of callbackhell
+    chrome.runtime.onMessage.addListener(function(req, sender, response) {
+      console.log(req);
+    });
     chrome.runtime.onConnect.addListener(function(port) {
 
       port.onMessage.addListener(function(err) {
@@ -75,11 +77,12 @@ class EditCtrl {
     const _this = this;
     this.ContentScriptFactory.triggerEditAction()
       .then(editedElement => {
+        console.log(editedElement);
         for (let key in Object.keys(editedElement)) {
           _this.editToggle[key] = false;
         }
-        this.cookies.putObject('lastEdit', editedElement);
-        _this.editElement = editedElement;
+         _this.cookies.putObject('lastEdit', editedElement);
+         _this.editElement = editedElement;
       });
   }
 
@@ -92,7 +95,6 @@ class EditCtrl {
   }
 
   changeBackgroundColor(element, color) {
-    const _this = this;
     const colorObj = {
       command: 'changeColor',
       color,

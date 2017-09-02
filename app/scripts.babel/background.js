@@ -15,22 +15,28 @@ let saveEditToURL = (url, edit) => {
         }
       };
       chrome.storage.sync.set(saveEdit);
-    }
-
-    else {
+    } else {
       pageEdits[url].edits.find((e, i) => {
-        if(e.element === edit.element) {
+        if (e.element === edit.element) {
           //TODO: add functionality so that if the new edit is already stored on the element, replace the saved value with the new one
-          pageEdits[url].edits[i].styles.find((s, j) => {
+          let cleanStyles = pageEdits[url].edits[i].styles.filter(e => e !== edit);
+          console.log('filtered', cleanStyles);
+          let existingEditKey = pageEdits[url].edits[i].styles.find((s, j) => {
             console.log(s);
-            if(edit === s) {
-              pageEdits[url].edits[i].styles.splice(j, 1);
+            if (edit === s) {
+              return j;
             }
           });
-          pageEdits[url].edits[i].styles.push(edit);
-        }
 
-        else {
+          console.log(existingEditKey);
+          if (existingEditKey) {
+            delete pageEdits[url].edits[i].styles[existingEditKey];
+            pageEdits[url].edits[i].styles.push(edit);
+          } else {
+            delete edit.element;
+            pageEdits[url].edits[i].push(edit);
+          }
+        } else {
           const stylesObject = {
             element: edit.element,
             styles: [edit]
@@ -45,34 +51,85 @@ let saveEditToURL = (url, edit) => {
 }
 
 
-chrome.webNavigation.onHistoryStateUpdated.addListener(function() {
-  chrome.tabs.executeScript(null, { file: 'scripts/contentscript.js' });
+chrome.webNavigation.onHistoryStateUpdated.addListener(() => {
+  chrome.tabs.executeScript(null, {
+    file: 'scripts/contentscript.js'
+  });
 });
 
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.command === 'saveEdit') {
-    const isValid = isValidEditObject(request.edit);
-    console.log(isValid);
+  console.log(request);
+  switch (request.command) {
+    case 'saveEdit':
+      const isValid = isValidEditObject(request.edit);
+      console.log(isValid);
 
-    if(isValid) {
-      saveEditToURL(sender.tab.url, request.edit);
-      sendResponse(true);
+      if (isValid) {
+        saveEditToURL(sender.tab.url, request.edit);
+        sendResponse(true);
+        return true;
+      }
+      sendResponse('Edit Object passed is not valid');
+      break;
+    case 'getContextMenuHTML':
+      const filepath = chrome.extension.getURL('scripts/context_menu.html');
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', filepath, true);
+      xhr.onload = () => {
+        let parser = new DOMParser();
+        let doc = parser.parseFromString(xhr.responseText, 'text/html');
+        const cleanHTML = setContextMenuNodeValues(doc, request.element);
+        sendResponse(cleanHTML);
+      }
+      xhr.onerror = err => {
+        console.error(err);
+        sendResponse(err);
+      }
+      xhr.send();
       return true;
-    }
-    sendResponse('Edit Object passed is not valid');
+      break;
+    default:
+      sendResponse(null);
+      break;
   }
+
 });
+
+function setContextMenuNodeValues(cDocument, values) {
+  Object.keys(values).forEach(e => {
+    if(e === 'text') {
+      let textInput = cDocument.body.querySelector('.chrome-web-themer-edit-text').setAttribute('value', values[e].trim());
+    }
+
+    if(e === 'backgroundColor') {
+      let colorInput = cDocument.body.querySelector('.chrome-web-themer-change-color').setAttribute('value', values[e]);
+    }
+
+    if(e === 'width') {
+      let widthInput = cDocument.body.querySelector('.chrome-web-themer-change-width').setAttribute('value', values[e]);
+    }
+
+    if(e === 'height') {
+      let heightInput = cDocument.body.querySelector('.chrome-web-themer-change-height').setAttribute('value', values[e]);
+    }
+  });
+  return cDocument.body.parentNode.innerHTML;
+}
 
 function isValidEditObject(edit) {
 
+  if (edit.hasOwnProperty('originalText') && edit.hasOwnProperty('replaceText')) {
+    return true;
+  }
+
   const validStyleProps = ['color', 'backgroundColor', 'fontSize', 'fontFamily'];
   const keys = Object.keys(edit);
-  if(keys.length < 2) {
+  if (keys.length < 2) {
     return false;
   }
 
-  if(!edit.hasOwnProperty('element')) {
+  if (!edit.hasOwnProperty('element')) {
     return false;
   }
 

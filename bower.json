@@ -15,6 +15,7 @@
     "lodash": "^4.17.4",
     "angular-fontselect": "^0.13.4",
     "shadydom": "webcomponents/shadydom#^1.0.3",
-    "shadycss": "webcomponents/shadycss#^1.0.5"
+    "shadycss": "webcomponents/shadycss#^1.0.5",
+    "chrome-extension-async": "^3.2.4"
   }
 }

@@ -73,9 +73,11 @@
   },
   "dependencies": {
     "@webcomponents/webcomponentsjs": "^1.0.8",
+    "alertify": "^0.3.0",
     "browserify": "^14.4.0",
     "chai": "^4.1.1",
     "chai-as-promised": "^7.1.1",
+    "chrome-extension-async": "^3.2.4",
     "color-blind": "^0.1.1",
     "eslint-plugin-angular": "^2.5.0",
     "fs": "0.0.1-security",
