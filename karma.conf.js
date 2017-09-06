@@ -9,11 +9,13 @@ module.exports = function(config) {
       ]
     },
     files: [
+      { pattern: 'app/bower_components/angular/*.js', included: false },
+      { pattern: 'test/data/*.json', included: false },
       { pattern: 'test/*.js', included: true },
       { pattern: 'app/scripts/*.js', included: false }
     ],
     preprocessors: {
-      'test/**/*.js': 'browserify'
+      'test/*.js': 'browserify'
     },
     plugins: ['karma-sinon-chrome', 'karma-mocha', 'karma-chai', 'karma-babel-preprocessor', 'karma-browserify', 'karma-chrome-launcher'],
     reporters: ['progress'],

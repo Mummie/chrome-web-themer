@@ -1,38 +1,40 @@
 {
-	"edits": [
-		{
-			"class": "yt-uix-button-content",
-			"element": "SPAN",
-			"newText": "New Stuff",
-			"path": "#title",
-			"styles": [
-				{
-					"fontSize": "26px"
-				}
-			]
-		},
-		{
-			"element": "DIV",
-			"path": "#content",
-			"styles": [
-				{
-					"backgroundColor": "#968787"
-				}
-			]
-		}
-	],
-	"textReplaceEdits": [
-		{
-			"originalText": "Home",
-			"replaceText": "HomerSimpson"
-		},
-		{
-			"originalText": "Trending",
-			"replaceText": "Popular Stuffs"
-		},
-		{
-			"originalText": "Get Youtube Red",
-			"replaceText": "Get Youtube BLAST"
-		}
-	]
+	"https://www.youtube.com": {
+		"edits": [
+			{
+				"class": "yt-uix-button-content",
+				"element": "SPAN",
+				"newText": "New Stuff",
+				"path": "#title",
+				"styles": [
+					{
+						"fontSize": "26px"
+					}
+				]
+			},
+			{
+				"element": "DIV",
+				"path": "#content",
+				"styles": [
+					{
+						"backgroundColor": "#968787"
+					}
+				]
+			}
+		],
+		"textReplaceEdits": [
+			{
+				"originalText": "Home",
+				"replaceText": "HomerSimpson"
+			},
+			{
+				"originalText": "Trending",
+				"replaceText": "Popular Stuffs"
+			},
+			{
+				"originalText": "Get Youtube Red",
+				"replaceText": "Get Youtube BLAST"
+			}
+		]
+	}
 }
